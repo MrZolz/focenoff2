@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="FOCENOFF — видеомонтажёр. Работаю с YouTube-каналами от 2M+ подписчиков." />
+  <title>FOCENOFF — Video Editor</title>
+  <link rel="icon" href="ava.png" sizes="any" />
+  <link rel="apple-touch-icon" href="ava.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- WEBGL STAGE (fixed, behind all content — orb + flying gallery) -->
+  <canvas class="gl-canvas" id="glCanvas" aria-hidden="true"></canvas>
+
+  <!-- PRELOADER -->
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__center">
+      <img src="ava.png" alt="" class="preloader__avatar" />
+      <div class="preloader__name">FOCENOFF</div>
+    </div>
+    <div class="preloader__foot">
+      <div class="preloader__track">
+        <div class="preloader__fill" id="preloaderFill"></div>
+      </div>
+      <span class="preloader__num" id="preloaderNum">0</span>
+    </div>
+  </div>
+
+  <!-- CURSOR -->
+  <div class="cursor" id="cursor" aria-hidden="true">
+    <div class="cursor__ring"></div>
+    <div class="cursor__dot"></div>
+    <div class="cursor__label" id="cursorLabel"></div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header" id="header">
+    <div class="header__inner">
+      <a href="#top" class="header__logo" aria-label="На главную">
+        <img src="ava.png" alt="" class="header__logo-img" aria-hidden="true" width="28" height="28" />
+        <span class="header__logo-text" data-text="headerLogo">FOCENOFF</span>
+      </a>
+      <button class="header__menu-btn" id="menuToggle" aria-label="Открыть меню" aria-expanded="false">
+        <span class="header__menu-icon" aria-hidden="true">
+          <span></span><span></span>
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MENU OVERLAY -->
+  <div class="menu-overlay" id="menuOverlay" aria-hidden="true" role="dialog" aria-label="Навигация">
+    <div class="menu-overlay__inner">
+      <nav class="menu-nav" aria-label="Главное меню">
+        <ul id="menuList"></ul>
+      </nav>
+      <div class="menu-socials">
+        <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" target="_blank" rel="noopener noreferrer">Telegram DM</a>
+        <a href="https://t.me/focenoff" data-link="telegramChannel" target="_blank" rel="noopener noreferrer">Channel</a>
+        <a href="https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ" data-link="youtube" target="_blank" rel="noopener noreferrer">YouTube</a>
+        <a href="https://www.tiktok.com/@focenoff" data-link="tiktok" target="_blank" rel="noopener noreferrer">TikTok</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
+    <div class="hero__content">
+      <div class="hero__eyebrow">
+        <span class="hero__eyebrow-tag">Video Editor</span>
+        <span class="hero__eyebrow-sep" aria-hidden="true">·</span>
+        <span class="hero__eyebrow-tag">Russia</span>
+      </div>
+      <h1 class="hero__title" id="heroTitle">
+        <span class="hero__line" data-text="heroTitleLine1">MAXIM</span>
+        <span class="hero__line hero__line--outline" data-text="heroTitleLine2">FOCENOFF</span>
+      </h1>
+    </div>
+    <div class="hero__bottom">
+      <span class="hero__stat">2M+ ПОДПИСЧИКОВ · YOUTUBE · REELS</span>
+      <a href="#works" class="hero__scroll" aria-label="К работам">
+        <span class="hero__scroll-line"></span>
+        <span class="hero__scroll-label">SCROLL</span>
+      </a>
+    </div>
+    <span class="hero__index" aria-hidden="true">01</span>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track" id="marqueeTrack"></div>
+  </div>
+
+  <main>
+
+    <!-- WORKS — WebGL flying gallery (desktop) · DOM fallback (mobile/no-WebGL) -->
+    <section class="works" id="works">
+      <!-- scroll driver: height injected by JS in WebGL mode -->
+      <div class="works__scroll" id="worksScroll" aria-hidden="true"></div>
+
+      <!-- DOM fallback gallery (shown when WebGL inactive) -->
+      <div class="works-hz works-dom" id="worksDom">
+        <div class="works-hz__track" id="worksTrack"></div>
+      </div>
+
+      <!-- HUD overlay (caption + open + progress + index) -->
+      <div class="works__hud" id="worksHud">
+        <div class="works__caption">
+          <span class="works__caption-title" id="worksTitle"></span>
+          <span class="works__caption-type" id="worksType"></span>
+        </div>
+        <button class="works__sound" id="worksSound" type="button" aria-label="Включить звук" aria-pressed="false" hidden>
+          <svg class="works__sound-ic works__sound-ic--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H2v6h4l5 4V5z"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>
+          </svg>
+          <svg class="works__sound-ic works__sound-ic--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
+            <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+          </svg>
+          <span class="works__sound-lbl">SOUND</span>
+        </button>
+        <button class="works__open" id="worksOpen" type="button" hidden>
+          <span id="worksOpenLabel">WATCH</span>
+          <span aria-hidden="true">↗</span>
+        </button>
+        <div class="works__progress">
+          <div class="works__bar" id="worksBar"></div>
+        </div>
+        <span class="works__count" id="worksCount">01</span>
+      </div>
+    </section>
+
+    <!-- STATEMENT -->
+    <section class="statement" id="statement">
+      <div class="statement__inner">
+        <p class="statement__text" data-text-rich="statementText">
+          ВИДЕОМОНТАЖЁР. РАБОТАЮ С КАНАЛАМИ ОТ <span class="accent">2M+</span> ПОДПИСЧИКОВ. YOUTUBE · REELS · BRAND CONTENT.
+        </p>
+        <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" class="statement__cta" target="_blank" rel="noopener noreferrer">
+          <span data-text="statementCta">НАПИСАТЬ В TELEGRAM</span>
+          <span class="statement__cta-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+      <span class="section__index" aria-hidden="true">03</span>
+    </section>
+
+    <!-- CONTACT CTA -->
+    <section class="contact-cta" id="contact">
+      <div class="contact-cta__inner">
+        <p class="contact-cta__label">Готов к новым проектам</p>
+        <a
+          href="https://t.me/MAKC_CBAPKA"
+          data-link="telegramDM"
+          class="contact-cta__link"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Написать в Telegram"
+        >
+          <span data-text="contactCtaLine1">НАПИСАТЬ</span>
+          <span data-text="contactCtaLine2">В TELEGRAM</span>
+          <span class="contact-cta__arrow" aria-hidden="true">↗</span>
+        </a>
+        <div class="contact-cta__socials">
+          <a href="https://t.me/focenoff" data-link="telegramChannel" target="_blank" rel="noopener noreferrer">TG Channel</a>
+          <a href="https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ" data-link="youtube" target="_blank" rel="noopener noreferrer">YouTube</a>
+          <a href="https://www.tiktok.com/@focenoff" data-link="tiktok" target="_blank" rel="noopener noreferrer">TikTok</a>
+        </div>
+      </div>
+      <span class="section__index" aria-hidden="true">04</span>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <span class="footer__name" data-text="footerName">MAXIM FOCENOFF</span>
+      <span class="footer__copy">© 2026</span>
+      <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" class="footer__contact" target="_blank" rel="noopener noreferrer">
+        CONTACT →
+      </a>
+    </div>
+  </footer>
+
+  <!-- VIDEO MODAL -->
+  <div class="v-modal" id="vModal" hidden role="dialog" aria-modal="true" aria-label="Видеоплеер">
+    <button class="v-modal__close" id="vModalClose" aria-label="Закрыть видео">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <div class="v-modal__backdrop" id="vModalBackdrop"></div>
+    <div class="v-modal__box">
+      <div class="v-modal__ratio">
+        <iframe id="vModalIframe" src="" allowfullscreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          title="Видео"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEMPLATES -->
+
+  <!-- Chapter title card (inter-title between sections in horizontal scroll) -->
+  <template id="tplChapterCard">
+    <div class="work-chapter" data-work-chapter>
+      <div class="work-chapter__inner">
+        <span class="work-chapter__num"></span>
+        <h2 class="work-chapter__title"></h2>
+        <span class="work-chapter__count"></span>
+      </div>
+    </div>
+  </template>
+
+  <!-- Full-screen video panel (motion clips) -->
+  <template id="tplWorkPanel">
+    <div class="work-panel" data-work>
+      <video class="work-panel__video" muted playsinline preload="metadata" loop></video>
+      <div class="work-panel__overlay">
+        <div class="work-panel__top">
+          <span class="work-panel__num"></span>
+        </div>
+        <div class="work-panel__bottom">
+          <div class="work-panel__info">
+            <h3 class="work-panel__title"></h3>
+            <span class="work-panel__type"></span>
+          </div>
+          <a class="work-panel__yt-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="Оригинал на YouTube">
+            YouTube ↗
+          </a>
+        </div>
+      </div>
+      <button class="work-panel__mute" aria-label="Включить звук" hidden>
+        <svg class="mute-icon mute-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+        </svg>
+        <svg class="mute-icon mute-icon--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" hidden>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+      </button>
+    </div>
+  </template>
+
+  <!-- YouTube card (full-screen thumbnail) -->
+  <template id="tplVideoCard">
+    <div class="work-panel work-panel--yt" data-work>
+      <div class="work-panel__media">
+        <img class="work-panel__thumb" loading="lazy" alt="" />
+        <button class="work-panel__play-btn" aria-label="Смотреть видео">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+      <div class="work-panel__overlay">
+        <div class="work-panel__top">
+          <span class="work-panel__num"></span>
+        </div>
+        <div class="work-panel__bottom">
+          <div class="work-panel__info">
+            <h3 class="work-panel__title"></h3>
+            <span class="work-panel__type"></span>
+          </div>
+          <span class="work-panel__stat"></span>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
+  <script src="script.js"></script>
+  <script type="module" src="webgl.js"></script>
+</body>
+</html>
