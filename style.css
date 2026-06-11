@@ -713,7 +713,7 @@ body::after {
   transition: transform 0.8s var(--ease-expo);
   z-index: 2;
 }
-.work-item--yt:hover .work-item__thumb { transform: scale(1.04); }
+.work-item:hover .work-item__thumb { transform: scale(1.04); }
 
 /* Play overlay */
 .work-item__play {
