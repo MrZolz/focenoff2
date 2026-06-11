@@ -16,13 +16,12 @@ import * as THREE from './vendor/three.module.js';
   'use strict';
 
   /* ---------- capability gate ---------------------------------- */
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const finePointer  = matchMedia('(pointer: fine)').matches;
   const isMobile     = !finePointer || window.innerWidth < 768;
   const veryLowEnd   = (navigator.deviceMemory != null && navigator.deviceMemory < 0.5);
 
-  if (reduceMotion || veryLowEnd) {
-    console.log('[hero3d] scene skipped: reduceMotion=' + reduceMotion + ' deviceMemory=' + navigator.deviceMemory);
+  if (veryLowEnd) {
+    console.log('[hero3d] scene skipped: deviceMemory=' + navigator.deviceMemory);
     return;
   }
 
