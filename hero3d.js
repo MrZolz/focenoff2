@@ -19,9 +19,12 @@ import * as THREE from './vendor/three.module.js';
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const finePointer  = matchMedia('(pointer: fine)').matches;
   const isMobile     = !finePointer || window.innerWidth < 768;
-  const lowEnd       = (navigator.deviceMemory && navigator.deviceMemory <= 1);
+  const veryLowEnd   = (navigator.deviceMemory != null && navigator.deviceMemory < 0.5);
 
-  if (reduceMotion || lowEnd) return; // keep the hero calm on these devices
+  if (reduceMotion || veryLowEnd) {
+    console.log('[hero3d] scene skipped: reduceMotion=' + reduceMotion + ' deviceMemory=' + navigator.deviceMemory);
+    return;
+  }
 
   const canvas = document.getElementById('heroCanvas');
   if (!canvas) return;
@@ -44,7 +47,9 @@ import * as THREE from './vendor/three.module.js';
   }
 
   const renderer = makeRenderer();
-  if (!renderer) return; // no WebGL → hero stays type-only
+  if (!renderer) { console.log('[hero3d] no WebGL context available'); return; }
+
+  console.log('[hero3d] scene initializing…');
 
   /* ---------- small utils -------------------------------------- */
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -80,7 +85,8 @@ import * as THREE from './vendor/three.module.js';
 
     function loadHeroModel(content) {
       const file = content && content.hero && content.hero.modelFile;
-      if (!file) return;
+      if (!file) { console.log('[hero3d] no modelFile configured in content.json'); return; }
+      console.log('[hero3d] loading model:', file);
       // loader is only fetched when a model is actually configured
       import('./vendor/GLTFLoader.js')
         .then(({ GLTFLoader }) => new GLTFLoader().load(
@@ -112,6 +118,7 @@ import * as THREE from './vendor/three.module.js';
             heroModel = obj;
             heroGroup.visible = true;
             canvas.classList.add('is-live');
+            console.log('[hero3d] model loaded successfully');
           },
           undefined,
           (err) => console.warn('[hero3d] hero model failed to load →', err)
