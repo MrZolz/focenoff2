@@ -851,6 +851,8 @@ body::after {
 }
 
 /* Mute button */
+body:not(.mode-webgl) .work-panel:not(.work-panel--yt) { cursor: pointer; }
+
 .work-panel__mute {
   position: absolute;
   left: 50%;
@@ -1339,6 +1341,13 @@ body.mode-webgl .works-dom { display: none; }
   white-space: nowrap;
 }
 
+@media (pointer: coarse) {
+  /* ≥44px touch targets */
+  .work-panel__mute { width: 46px; height: 46px; }
+  .works__sound { min-height: 44px; }
+  .header__mode { padding-block: 14px; }
+}
+
 @media (max-width: 720px) {
   .works__open { display: none; }
   .works__hud {
@@ -1350,7 +1359,7 @@ body.mode-webgl .works-dom { display: none; }
   .works__caption-type { font-size: 0.5rem; letter-spacing: 0.16em; }
   /* sound becomes a compact icon-only puck so the bar still fits */
   .works__sound {
-    width: 40px; height: 40px;
+    width: 44px; height: 44px;
     padding: 0; gap: 0; justify-content: center;
   }
   .works__sound-lbl { display: none; }
@@ -1380,4 +1389,15 @@ body:not(.gsap-ready) [data-work-chapter] {
   [data-work], [data-work-chapter] { opacity: 1 !important; transform: none !important; }
   .word__inner { transform: none !important; }
   .char { transform: none !important; }
+}
+
+/* ============================================================
+   SMALL SCREENS — keep display type inside the viewport
+============================================================ */
+@media (max-width: 720px) {
+  .contact-cta__link { font-size: clamp(1.7rem, 10.5vw, 2.6rem); }
+  .contact-cta__socials { gap: 20px; flex-wrap: wrap; }
+  .statement__text { font-size: clamp(1.35rem, 6.4vw, 1.9rem); }
+  .footer__inner { flex-wrap: wrap; gap: 12px 20px; }
+  .header__mode { margin-right: 16px; }
 }
