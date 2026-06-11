@@ -199,14 +199,10 @@ import * as THREE from './vendor/three.module.js';
           uPlaneAspect:{ value: PW / PH },
         },
         vertexShader: `
-          uniform float uTime; uniform float uHover;
           varying vec2 vUv;
           void main(){
             vUv = uv;
-            vec3 p = position;
-            float w = sin(p.x * 2.2 + uTime * 2.0) * cos(p.y * 2.0 - uTime * 1.5);
-            p.z += w * 0.12 * uHover;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }`,
         fragmentShader: `
           uniform sampler2D uMap; uniform float uTime; uniform float uHover;
@@ -219,15 +215,8 @@ import * as THREE from './vendor/three.module.js';
             float pa = uPlaneAspect, ia = uImgAspect;
             if (ia > pa) { float s = pa / ia; uv.x = (uv.x - 0.5) * s + 0.5; }
             else         { float s = ia / pa; uv.y = (uv.y - 0.5) * s + 0.5; }
-            // hover ripple + chromatic aberration
-            vec2 c = uv - 0.5; float d = length(c);
-            float ripple = sin(d * 16.0 - uTime * 3.0) * 0.007 * uHover;
-            vec2 ruv = uv + (c / (d + 0.0001)) * ripple;
-            float ca = 0.0075 * uHover;
-            float r = texture2D(uMap, ruv + vec2(ca, 0.0)).r;
-            float g = texture2D(uMap, ruv).g;
-            float b = texture2D(uMap, ruv - vec2(ca, 0.0)).b;
-            vec3 col = vec3(r, g, b);
+            // clean sample — no ripple / chromatic aberration on hover
+            vec3 col = texture2D(uMap, uv).rgb;
             // dim inactive planes slightly, lift active
             float lum = dot(col, vec3(0.299, 0.587, 0.114));
             col = mix(vec3(lum), col, 0.55 + 0.45 * uActive);
