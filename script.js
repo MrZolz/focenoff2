@@ -17,6 +17,27 @@ window.FOCENOFF_MODE = (() => {
 if (window.FOCENOFF_MODE === 'lite') document.documentElement.classList.add('mode-lite');
 
 /* ============================================================
+   GLOBAL SOUND STATE — one switch for every video on the site.
+   Both the WebGL HUD button and the DOM panel buttons drive it;
+   all videos + all icons stay in sync.
+============================================================ */
+window.FOCENOFF_SOUND = (() => {
+  const subs = [];
+  let on = false;
+  return {
+    get on() { return on; },
+    set(v) {
+      v = !!v;
+      if (v === on) return;
+      on = v;
+      subs.forEach((fn) => { try { fn(on); } catch (e) { /* keep others alive */ } });
+    },
+    toggle() { this.set(!on); },
+    subscribe(fn) { subs.push(fn); fn(on); },
+  };
+})();
+
+/* ============================================================
    CONTENT LAYER
 ============================================================ */
 let CONTENT = null;
@@ -488,6 +509,28 @@ window.initDomWorksFallback = initDomWorks;
 /* ============================================================
    HORIZONTAL WORKS — GSAP pin + x movement
 ============================================================ */
+/* ============================================================
+   PANEL SOUND — DOM gallery buttons bound to the global state
+============================================================ */
+function bindPanelSound(panel) {
+  const video   = panel.querySelector('video');
+  const muteBtn = panel.querySelector('.work-panel__mute');
+  if (!video || !muteBtn || muteBtn.dataset.soundBound) return;
+  muteBtn.dataset.soundBound = '1';
+  const iconOff = muteBtn.querySelector('.mute-icon--off');
+  const iconOn  = muteBtn.querySelector('.mute-icon--on');
+  window.FOCENOFF_SOUND.subscribe((on) => {
+    video.muted = !on;
+    if (iconOff) iconOff.hidden = on;
+    if (iconOn)  iconOn.hidden  = !on;
+    muteBtn.setAttribute('aria-label', on ? 'Выключить звук' : 'Включить звук');
+  });
+  muteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.FOCENOFF_SOUND.toggle();
+  });
+}
+
 function initHorizontalWorks() {
   const hz    = document.querySelector('.works-hz');
   const track = document.getElementById('worksTrack');
@@ -549,26 +592,8 @@ function initHorizontalWorks() {
     },
   });
 
-  // Video mute buttons setup
-  workPanels.forEach(panel => {
-    const video   = panel.querySelector('video');
-    const muteBtn = panel.querySelector('.work-panel__mute');
-    if (!video || !muteBtn) return;
-    video.muted = true;
-    const iconOff = muteBtn.querySelector('.mute-icon--off');
-    const iconOn  = muteBtn.querySelector('.mute-icon--on');
-    function syncUI() {
-      if (iconOff) iconOff.hidden = !video.muted;
-      if (iconOn)  iconOn.hidden  =  video.muted;
-      muteBtn.setAttribute('aria-label', video.muted ? 'Включить звук' : 'Выключить звук');
-    }
-    muteBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      video.muted = !video.muted;
-      syncUI();
-    });
-    syncUI();
-  });
+  // Video sound — bound to the global state (one switch for all videos)
+  workPanels.forEach(bindPanelSound);
 }
 
 /* ============================================================
@@ -687,25 +712,7 @@ function initScrollVideos() {
   const panels = document.querySelectorAll('.work-panel:not(.work-panel--yt)');
   if (!panels.length) return;
 
-  panels.forEach(panel => {
-    const video   = panel.querySelector('video');
-    const muteBtn = panel.querySelector('.work-panel__mute');
-    if (!video || !muteBtn) return;
-    video.muted = true;
-    const iconOff = muteBtn.querySelector('.mute-icon--off');
-    const iconOn  = muteBtn.querySelector('.mute-icon--on');
-    function syncUI() {
-      if (iconOff) iconOff.hidden = !video.muted;
-      if (iconOn)  iconOn.hidden  =  video.muted;
-      muteBtn.setAttribute('aria-label', video.muted ? 'Включить звук' : 'Выключить звук');
-    }
-    muteBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      video.muted = !video.muted;
-      syncUI();
-    });
-    syncUI();
-  });
+  panels.forEach(bindPanelSound);
 
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {

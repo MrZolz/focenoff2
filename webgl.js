@@ -439,15 +439,18 @@ import * as THREE from './vendor/three.module.js';
       if (items[activeIdx]) openWork(items[activeIdx]);
     });
 
-    /* ---------- sound toggle for the active motion clip ---------- */
-    let soundOn = false;
+    /* ---------- sound toggle — bound to the global state ---------- */
+    const SOUND = window.FOCENOFF_SOUND;
+    let soundOn = SOUND ? SOUND.on : false;
     const worksSoundBtn = document.getElementById('worksSound');
     function applySound() {
-      const v = activeVideoPlane && activeVideoPlane.userData.video;
-      if (v) {
-        v.muted = !soundOn;
-        if (soundOn) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      // global state → every gallery video, not just the active clip
+      for (let i = 0; i < planes.length; i++) {
+        const pv = planes[i].userData.video;
+        if (pv) pv.muted = !soundOn;
       }
+      const v = activeVideoPlane && activeVideoPlane.userData.video;
+      if (v && soundOn) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
     }
     function syncSoundBtn() {
       if (!worksSoundBtn) return;
@@ -459,10 +462,13 @@ import * as THREE from './vendor/three.module.js';
       if (off) off.hidden = soundOn;
       if (on)  on.hidden  = !soundOn;
     }
+    if (SOUND) {
+      SOUND.subscribe((on) => { soundOn = on; applySound(); syncSoundBtn(); });
+    }
     if (worksSoundBtn) worksSoundBtn.addEventListener('click', () => {
-      soundOn = !soundOn;     // this click is the user gesture that unlocks audio
-      applySound();
-      syncSoundBtn();
+      // this click is the user gesture that unlocks audio
+      if (SOUND) SOUND.toggle();
+      else { soundOn = !soundOn; applySound(); syncSoundBtn(); }
     });
 
     /* ============================================================
