@@ -109,6 +109,20 @@ function toSrc(filename) {
   return filename.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
 }
 
+/* Compressed 720p preview rendition for inline gallery playback (the source
+   files are 4K / ~37 Mbps — they choke mobile devices). Falls back to the
+   original file via an 'error' listener if no preview exists. */
+function toPreviewSrc(filename) {
+  const name = String(filename).split('/').pop();
+  const base = name.replace(/\.[^.]+$/, '');
+  return toSrc('media/previews/' + base + '.preview.mp4');
+}
+
+/* small screens / touch → play the 720p rendition even in the modal */
+function prefersLightVideo() {
+  return window.matchMedia('(max-width: 1023px), (pointer: coarse)').matches;
+}
+
 async function fetchContent() {
   // content.json is the single source of truth: the admin server rewrites it on
   // every save, so a relative static fetch works identically on the Express host
@@ -223,7 +237,14 @@ function renderWorks() {
         globalIdx++;
         const node  = tplPanel.content.firstElementChild.cloneNode(true);
         const video = node.querySelector('.work-panel__video');
-        video.src   = toSrc(clip.file);
+        const fullSrc = toSrc(clip.file);
+        video.dataset.fullSrc = fullSrc;
+        video.src = toPreviewSrc(clip.file);
+        video.addEventListener('error', () => {
+          if (video.dataset.fellBack) return;
+          video.dataset.fellBack = '1';
+          video.src = fullSrc; // no preview rendition → use the original
+        });
         node.querySelector('.work-panel__num').textContent   = String(globalIdx).padStart(2, '0');
         node.querySelector('.work-panel__title').textContent = clip.title || '';
         node.querySelector('.work-panel__type').textContent  = clip.label || '';
@@ -387,6 +408,43 @@ function fitHeroTitle() {
 
   // Apply inline size directly to each line (overrides CSS)
   lines.forEach(l => { l.style.fontSize = newFs + 'px'; });
+}
+
+/* ============================================================
+   FIT DISPLAY TEXT — AKONY is an extremely wide typeface and all of
+   these strings are admin-editable, so on narrow phones the menu items,
+   the contact CTA lines and the chapter titles can overflow the viewport
+   and get clipped. Shrink them just enough to fit.
+============================================================ */
+function fitDisplayText() {
+  // els share one uniform font-size (worst case wins) so groups stay even
+  const fit = (els) => {
+    els = els.filter(Boolean);
+    if (!els.length) return;
+    els.forEach(el => { el.style.fontSize = ''; });
+    let ratio = 1;
+    els.forEach(el => {
+      const avail = el.parentElement ? el.parentElement.clientWidth : 0;
+      if (!avail) return;
+      // scrollWidth for blocks; inline spans report 0 → bounding rect
+      const w = el.scrollWidth || el.getBoundingClientRect().width;
+      if (w > avail) ratio = Math.min(ratio, avail / w);
+    });
+    if (ratio >= 1) return;
+    els.forEach(el => {
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      el.style.fontSize = Math.max(14, Math.floor(fs * ratio * 0.97)) + 'px';
+    });
+  };
+  fit(Array.from(document.querySelectorAll('.menu-nav__text')));
+  fit(Array.from(document.querySelectorAll('.contact-cta__link span[data-text]')));
+  document.querySelectorAll('.work-chapter__title').forEach(el => fit([el]));
+  document.querySelectorAll('.work-panel__title').forEach(el => fit([el]));
+}
+
+function fitAllDisplayText() {
+  fitHeroTitle();
+  fitDisplayText();
 }
 
 /* ============================================================
@@ -889,11 +947,17 @@ function initVideoModal() {
   }
 
   // motion clips play on-site from local mp4 — same modal, native <video>
-  function openLocalModal(src) {
+  function openLocalModal(src, fallbackSrc) {
     if (!localVid || !src) return;
     iframe.src = '';
     iframe.hidden = true;
     localVid.hidden = false;
+    localVid.onerror = (fallbackSrc && fallbackSrc !== src) ? () => {
+      localVid.onerror = null;
+      localVid.src = fallbackSrc;
+      const p2 = localVid.play();
+      if (p2 && p2.catch) p2.catch(() => {});
+    } : null;
     localVid.src = src;
     localVid.muted = false;
     localVid.currentTime = 0;
@@ -906,7 +970,7 @@ function initVideoModal() {
     const box = modal.querySelector('.v-modal__box');
     const teardown = () => {
       iframe.src = '';
-      if (localVid) { localVid.pause(); localVid.removeAttribute('src'); localVid.load(); }
+      if (localVid) { localVid.onerror = null; localVid.pause(); localVid.removeAttribute('src'); localVid.load(); }
       modal.hidden = true;
       document.body.style.overflow = '';
       if (lenis) lenis.start();
@@ -934,8 +998,18 @@ function initVideoModal() {
     const panel = e.target.closest('.work-panel:not(.work-panel--yt)');
     if (panel && !e.target.closest('a, button')) {
       const v = panel.querySelector('.work-panel__video');
-      const src = v && (v.currentSrc || v.src);
-      if (src) openLocalModal(src);
+      if (!v) return;
+      const full    = v.dataset.fullSrc || v.currentSrc || v.src;
+      const preview = v.dataset.fellBack ? full : v.getAttribute('src');
+      // phones get the light 720p rendition in the modal too (4K stutters there)
+      if (prefersLightVideo() && preview && preview !== full) openLocalModal(preview, full);
+      else if (full) openLocalModal(full);
+    }
+    // failsafe: tapping anywhere on a YouTube panel (not a link) opens the player
+    const ytPanel = e.target.closest('.work-panel--yt');
+    if (ytPanel && !e.target.closest('a')) {
+      const pb = ytPanel.querySelector('.work-panel__play-btn[data-video-id]');
+      if (pb) { e.preventDefault(); openModal(pb.dataset.videoId); }
     }
   });
 
@@ -1020,14 +1094,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // font-display:swap means fonts.ready can resolve while AKONY is still
   // loading (text measured with fallback font) — explicitly load AKONY too,
   // and re-check after window 'load' as a final safety net.
-  window.addEventListener('resize', fitHeroTitle, { passive: true });
+  window.addEventListener('resize', fitAllDisplayText, { passive: true });
   const heroLine = document.querySelector('.hero__line');
   const heroFs = heroLine ? getComputedStyle(heroLine).fontSize : '100px';
   Promise.all([
     document.fonts.ready,
     document.fonts.load(`400 ${heroFs} AKONY`).catch(() => {}),
-  ]).then(() => fitHeroTitle());
-  window.addEventListener('load', () => setTimeout(fitHeroTitle, 300));
+  ]).then(() => fitAllDisplayText());
+  window.addEventListener('load', () => setTimeout(fitAllDisplayText, 300));
 
   if (typeof gsap !== 'undefined') {
     const initDelay = preloaderDone ? 0 : 50;

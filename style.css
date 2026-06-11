@@ -170,7 +170,9 @@ body::after {
 
 .preloader__name {
   font-family: var(--f-display);
-  font-size: clamp(2.8rem, 7vw, 6rem);
+  /* AKONY is extremely wide (≈11.8em for FOCENOFF incl. letter-spacing) —
+     cap the size so the name always fits narrow phones */
+  font-size: min(clamp(2.8rem, 7vw, 6rem), calc((100vw - 48px) / 12));
   font-weight: normal;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -317,7 +319,8 @@ body::after {
   width: 26px; height: 26px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid var(--border-2);
+  /* no outline — identical look to the preloader avatar */
+  mix-blend-mode: multiply;
 }
 
 .header__logo-text {
@@ -428,6 +431,7 @@ body::after {
   line-height: 1;
   text-transform: uppercase;
   color: var(--white);
+  white-space: nowrap; /* one line — JS fitter shrinks it to the viewport */
 }
 
 .menu-socials {
@@ -526,11 +530,17 @@ body::after {
   color: transparent;
 }
 
-/* Char split animation wrappers */
+/* Char split animation wrappers.
+   The title line-height is 0.85 while AKONY glyphs reach 0.71em above the
+   baseline — without extra headroom overflow:hidden shaves the glyph tops.
+   padding-top + equal negative margin extends the clip window upward
+   without moving the glyph. */
 .char-wrap {
   display: inline-block;
   overflow: hidden;
   vertical-align: bottom;
+  padding-top: 0.12em;
+  margin-top: -0.12em;
 }
 
 .char {
@@ -560,6 +570,9 @@ body::after {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--muted);
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 72%; /* never run under the SCROLL indicator on phones */
 }
 
 .hero__scroll {
@@ -781,6 +794,9 @@ body::after {
   flex-direction: column;
   justify-content: space-between;
   padding: clamp(20px, 4vw, 56px);
+  /* the gradient is decoration only — it must NOT swallow taps meant for the
+     play button underneath (this is why YouTube videos didn't open in LITE) */
+  pointer-events: none;
   background: linear-gradient(
     to bottom,
     rgba(0,0,0,0.4)  0%,
@@ -809,7 +825,9 @@ body::after {
   gap: 24px;
 }
 
-.work-panel__info { flex: 1; }
+/* min-width:0 lets the title column shrink — otherwise a long AKONY title
+   pushes the YouTube link / views off the right edge of the screen */
+.work-panel__info { flex: 1; min-width: 0; }
 
 .work-panel__title {
   font-family: var(--f-display);
@@ -831,12 +849,12 @@ body::after {
 }
 
 .work-panel__yt-link {
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(239,239,239,0.52);
-  border-bottom: 1px solid rgba(239,239,239,0.2);
+  color: rgba(255,255,255,0.88);
+  border-bottom: 1px solid rgba(255,255,255,0.42);
   padding-bottom: 2px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -844,10 +862,11 @@ body::after {
   min-height: 44px;
   display: inline-flex;
   align-items: flex-end;
+  pointer-events: auto; /* overlay is pointer-events:none — re-enable the link */
 }
 .work-panel__yt-link:hover {
-  color: var(--white);
-  border-color: var(--white);
+  color: #fff;
+  border-color: #fff;
 }
 
 /* Mute button */
@@ -909,6 +928,10 @@ body:not(.mode-webgl) .work-panel:not(.work-panel--yt) { cursor: pointer; }
 }
 .work-panel--yt:hover .work-panel__play-btn,
 .work-panel__play-btn:focus-visible { opacity: 1; }
+/* touch devices have no hover — keep the play button always visible */
+@media (pointer: coarse) {
+  .work-panel__play-btn { opacity: 1; }
+}
 
 .work-panel__play-btn svg {
   width: clamp(52px, 5.5vw, 72px);
@@ -927,13 +950,16 @@ body:not(.mode-webgl) .work-panel:not(.work-panel--yt) { cursor: pointer; }
 }
 
 .work-panel__stat {
-  font-size: 0.6rem;
+  font-size: 0.64rem;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: rgba(239,239,239,0.42);
+  color: rgba(255,255,255,0.82);
   white-space: nowrap;
   flex-shrink: 0;
 }
+/* .accent resolves to dark ink which vanished on the dark media gradient —
+   views ("350K views") must read light over video */
+.work-panel__stat .accent { color: #fff; }
 
 /* ============================================================
    MOBILE VERTICAL WORKS (≤ 1023px)
@@ -1059,7 +1085,7 @@ body.works-vertical .work-panel { width: 100%; height: 100svh; }
   touch-action: manipulation;
 }
 .contact-cta__link:hover { opacity: 0.6; }
-.contact-cta__link span  { display: block; }
+.contact-cta__link span  { display: block; white-space: nowrap; }
 
 .contact-cta__arrow {
   display: inline-block !important;
@@ -1349,14 +1375,21 @@ body.mode-webgl .works-dom { display: none; }
 }
 
 @media (max-width: 720px) {
-  .works__open { display: none; }
-  .works__hud {
-    gap: 12px;
-    align-items: center;
-    padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  /* keep the WATCH / YOUTUBE button on phones — just compact */
+  .works__open {
+    padding: 0 14px;
+    height: 44px;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    gap: 6px;
   }
-  .works__caption-title { font-size: 1.15rem; }
-  .works__caption-type { font-size: 0.5rem; letter-spacing: 0.16em; }
+  .works__hud {
+    gap: 10px;
+    align-items: center;
+    padding: 0 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .works__caption-title { font-size: 1.05rem; }
+  .works__caption-type { font-size: 0.5rem; letter-spacing: 0.12em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* sound becomes a compact icon-only puck so the bar still fits */
   .works__sound {
     width: 44px; height: 44px;

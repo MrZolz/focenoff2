@@ -68,6 +68,11 @@ import * as THREE from './vendor/three.module.js';
   const smooth = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
   const pad2   = (n) => String(n).padStart(2, '0');
   const toSrc  = (f) => f.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
+  // light 720p rendition for inline playback (sources are 4K — too heavy for phones)
+  const toPreviewSrc = (f) => {
+    const name = String(f).split('/').pop();
+    return toSrc('media/previews/' + name.replace(/\.[^.]+$/, '') + '.preview.mp4');
+  };
 
   try {
     init();
@@ -309,7 +314,15 @@ import * as THREE from './vendor/three.module.js';
         v = document.createElement('video');
         v.muted = !soundOn; v.loop = true; v.playsInline = true;
         v.preload = 'auto'; v.crossOrigin = 'anonymous';
-        v.src = toSrc(it.file);
+        v.src = toPreviewSrc(it.file);
+        v.addEventListener('error', () => {
+          // no preview rendition → fall back to the original file
+          if (v.dataset.fellBack) return;
+          v.dataset.fellBack = '1';
+          v.src = toSrc(it.file);
+          const pr2 = v.play();
+          if (pr2 && pr2.catch) pr2.catch(() => {});
+        });
         mesh.userData.video = v;
         const vt = new THREE.VideoTexture(v);
         vt.colorSpace = THREE.LinearSRGBColorSpace;
@@ -378,7 +391,9 @@ import * as THREE from './vendor/three.module.js';
       if (it.kind === 'yt' && it.videoId && window.openVideoModal) {
         window.openVideoModal(it.videoId);
       } else if (it.kind === 'motion' && it.file && window.openLocalVideoModal) {
-        window.openLocalVideoModal(toSrc(it.file));
+        // phones: play the light 720p rendition in the modal too (4K stutters)
+        if (isMobile) window.openLocalVideoModal(toPreviewSrc(it.file), toSrc(it.file));
+        else window.openLocalVideoModal(toSrc(it.file));
       } else if (it.ytUrl) {
         window.open(it.ytUrl, '_blank', 'noopener');
       } else if (it.kind === 'yt' && it.videoId) {
@@ -438,7 +453,11 @@ import * as THREE from './vendor/three.module.js';
 
     const worksOpenBtn = document.getElementById('worksOpen');
     if (worksOpenBtn) worksOpenBtn.addEventListener('click', () => {
-      if (items[activeIdx]) openWork(items[activeIdx]);
+      const it = items[activeIdx];
+      if (!it) return;
+      // motion clips: the HUD button is "YOUTUBE" → open the original video
+      if (it.kind === 'motion' && it.ytUrl) window.open(it.ytUrl, '_blank', 'noopener');
+      else openWork(it);
     });
 
     /* ---------- sound toggle — bound to the global state ---------- */
@@ -490,10 +509,13 @@ import * as THREE from './vendor/three.module.js';
       if (activeI !== lastHudIdx) {
         const it = items[activeI];
         if (elTitle) elTitle.textContent = it.title || '';
-        if (elType)  elType.textContent  = it.label || '';
+        // show view counts next to the label (admin stores them as "*350K* views")
+        const stat = it.stat ? String(it.stat).replace(/\*/g, '') : '';
+        if (elType)  elType.textContent  = (it.label || '') + (stat ? ' · ' + stat : '');
         if (elCount) elCount.textContent = pad2(activeI + 1) + ' / ' + pad2(N);
         if (worksOpenBtn) worksOpenBtn.hidden = false;
-        if (elOpenLb) elOpenLb.textContent = 'WATCH'; // both kinds open on-site now
+        // motion → link out to the original YouTube video; yt → on-site player
+        if (elOpenLb) elOpenLb.textContent = (it.kind === 'motion' && it.ytUrl) ? 'YOUTUBE' : 'WATCH';
         // sound control only makes sense over a playing motion clip
         if (worksSoundBtn) {
           worksSoundBtn.hidden = it.kind !== 'motion';
