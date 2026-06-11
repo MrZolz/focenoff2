@@ -86,258 +86,57 @@ import * as THREE from './vendor/three.module.js';
     camera.position.set(0, 0, 7);
 
     /* ============================================================
-       MATCAP — dark chrome (generated, no asset)
+       HERO MODEL — custom .glb/.gltf uploaded via the admin panel
+       (replaces the old comet; same cursor-chase + scroll fade)
     ============================================================ */
-    function makeMatcap() {
-      const s = 256;
-      const cv = document.createElement('canvas');
-      cv.width = cv.height = s;
-      const g = cv.getContext('2d');
-      g.fillStyle = '#070707';
-      g.fillRect(0, 0, s, s);
-      // base sphere shading
-      let rg = g.createRadialGradient(s * 0.5, s * 0.5, s * 0.1, s * 0.5, s * 0.5, s * 0.52);
-      rg.addColorStop(0,   '#3a3a3d');
-      rg.addColorStop(0.6, '#1a1a1c');
-      rg.addColorStop(1,   '#050505');
-      g.fillStyle = rg;
-      g.beginPath(); g.arc(s * 0.5, s * 0.5, s * 0.5, 0, Math.PI * 2); g.fill();
-      // key specular highlight (upper-left)
-      rg = g.createRadialGradient(s * 0.34, s * 0.30, 2, s * 0.34, s * 0.30, s * 0.42);
-      rg.addColorStop(0,   'rgba(255,255,255,0.95)');
-      rg.addColorStop(0.18,'rgba(232,232,236,0.55)');
-      rg.addColorStop(0.5, 'rgba(140,140,150,0.05)');
-      rg.addColorStop(1,   'rgba(0,0,0,0)');
-      g.fillStyle = rg;
-      g.beginPath(); g.arc(s * 0.5, s * 0.5, s * 0.5, 0, Math.PI * 2); g.fill();
-      // cool rim light (lower-right)
-      rg = g.createRadialGradient(s * 0.74, s * 0.78, 2, s * 0.74, s * 0.78, s * 0.34);
-      rg.addColorStop(0,  'rgba(150,170,200,0.5)');
-      rg.addColorStop(0.5,'rgba(90,110,140,0.12)');
-      rg.addColorStop(1,  'rgba(0,0,0,0)');
-      g.fillStyle = rg;
-      g.beginPath(); g.arc(s * 0.5, s * 0.5, s * 0.5, 0, Math.PI * 2); g.fill();
+    const heroGroup = new THREE.Group();
+    heroGroup.visible = false;
+    scene.add(heroGroup);
+    let heroModel = null;
+    const heroMats = [];
 
-      const tex = new THREE.CanvasTexture(cv);
-      tex.colorSpace = THREE.LinearSRGBColorSpace;
-      tex.needsUpdate = true;
-      return tex;
+    function loadHeroModel(content) {
+      const file = content && content.hero && content.hero.modelFile;
+      if (!file) return;
+      // loader is only fetched when a model is actually configured
+      import('./vendor/GLTFLoader.js')
+        .then(({ GLTFLoader }) => new GLTFLoader().load(
+          toSrc(file),
+          (gltf) => {
+            const obj = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+            if (!obj) return;
+            // normalize size + center so any upload sits like the old comet
+            const box = new THREE.Box3().setFromObject(obj);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            obj.scale.setScalar(3.2 / maxDim);
+            box.setFromObject(obj);
+            obj.position.sub(box.getCenter(new THREE.Vector3()));
+            // collect materials for the scroll fade; keep their base opacity
+            obj.traverse((n) => {
+              if (!n.isMesh || !n.material) return;
+              (Array.isArray(n.material) ? n.material : [n.material]).forEach((m) => {
+                m.transparent = true;
+                m.userData.baseOpacity = (m.opacity != null ? m.opacity : 1);
+                heroMats.push(m);
+              });
+            });
+            // the scene is otherwise unlit (matcap/shader) → light the model
+            const amb = new THREE.AmbientLight(0xffffff, 1.15);
+            const key = new THREE.DirectionalLight(0xffffff, 1.6);
+            key.position.set(2.5, 3, 4);
+            heroGroup.add(amb, key, obj);
+            heroModel = obj;
+            heroGroup.visible = true;
+          },
+          undefined,
+          (err) => console.warn('[webgl] hero model failed to load →', err)
+        ))
+        .catch((err) => console.warn('[webgl] GLTFLoader unavailable →', err));
     }
 
-    /* ============================================================
-       ORB — displaced icosphere with dark-chrome matcap
-    ============================================================ */
-    const SNOISE = `
-      vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
-      vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
-      vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
-      vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
-      float snoise(vec3 v){
-        const vec2 C=vec2(1.0/6.0,1.0/3.0); const vec4 D=vec4(0.0,0.5,1.0,2.0);
-        vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx);
-        vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.0-g; vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy);
-        vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy;
-        i=mod289(i);
-        vec4 p=permute(permute(permute(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
-        float n_=0.142857142857; vec3 ns=n_*D.wyz-D.xzx;
-        vec4 j=p-49.0*floor(p*ns.z*ns.z);
-        vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.0*x_);
-        vec4 x=x_*ns.x+ns.yyyy; vec4 y=y_*ns.x+ns.yyyy; vec4 h=1.0-abs(x)-abs(y);
-        vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
-        vec4 s0=floor(b0)*2.0+1.0; vec4 s1=floor(b1)*2.0+1.0; vec4 sh=-step(h,vec4(0.0));
-        vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
-        vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
-        vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
-        p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
-        vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0); m=m*m;
-        return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
-      }`;
-
-    const orbUniforms = {
-      uMatcap:  { value: makeMatcap() },
-      uTime:    { value: 0 },
-      uAmp:     { value: 0.05 },   // low displacement → reads as a round comet head
-      uFreq:    { value: 0.95 },
-      uOpacity: { value: 1 },
-    };
-
-    const orbMat = new THREE.ShaderMaterial({
-      uniforms: orbUniforms,
-      transparent: true,
-      vertexShader: `
-        uniform float uTime; uniform float uAmp; uniform float uFreq;
-        varying vec3 vViewNormal; varying vec3 vViewPos;
-        ${SNOISE}
-        float disp(vec3 p){
-          float t = uTime * 0.18;
-          float n = snoise(p * uFreq + vec3(0.0, t, 0.0));
-          n += 0.5 * snoise(p * uFreq * 2.1 + vec3(t * 1.3, 0.0, 0.0));
-          return n;
-        }
-        void main(){
-          vec3 p = position;
-          vec3 N = normalize(normal);
-          float e = 0.18;
-          vec3 t1 = normalize(cross(N, vec3(0.0,1.0,0.0) + vec3(0.0001,0.0,0.0)));
-          vec3 t2 = normalize(cross(N, t1));
-          float dA = disp(p);
-          float dB = disp(p + t1 * e);
-          float dC = disp(p + t2 * e);
-          vec3 pA = p          + N * dA * uAmp;
-          vec3 pB = (p + t1*e)  + N * dB * uAmp;
-          vec3 pC = (p + t2*e)  + N * dC * uAmp;
-          vec3 newN = normalize(cross(pB - pA, pC - pA));
-          vec4 mv = modelViewMatrix * vec4(pA, 1.0);
-          vViewPos = -mv.xyz;
-          vViewNormal = normalize(normalMatrix * newN);
-          gl_Position = projectionMatrix * mv;
-        }`,
-      fragmentShader: `
-        uniform sampler2D uMatcap; uniform float uOpacity;
-        varying vec3 vViewNormal; varying vec3 vViewPos;
-        void main(){
-          vec3 n = normalize(vViewNormal);
-          vec3 vd = normalize(vViewPos);
-          vec3 x = normalize(vec3(vd.z, 0.0, -vd.x));
-          vec3 y = cross(vd, x);
-          vec2 muv = vec2(dot(x, n), dot(y, n)) * 0.495 + 0.5;
-          vec3 col = texture2D(uMatcap, muv).rgb;
-          // subtle fresnel rim to lift edges off the light paper
-          float fres = pow(1.0 - clamp(dot(n, vd), 0.0, 1.0), 2.5);
-          col += fres * 0.18;
-          gl_FragColor = vec4(col, uOpacity);
-        }`,
-    });
-
-    const orbGroup = new THREE.Group();              // comet container (follows the cursor)
-    const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6, isMobile ? 12 : 24), orbMat);
-    orbGroup.add(orb);
-
-    /* ---- coma : soft dark halo hugging the head ---- */
-    function comaTexture() {
-      const s = 256;
-      const cv = document.createElement('canvas'); cv.width = cv.height = s;
-      const g = cv.getContext('2d');
-      const rg = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-      rg.addColorStop(0,   'rgba(12,11,10,0.50)');
-      rg.addColorStop(0.4, 'rgba(12,11,10,0.20)');
-      rg.addColorStop(1,   'rgba(12,11,10,0)');
-      g.fillStyle = rg; g.fillRect(0, 0, s, s);
-      const t = new THREE.CanvasTexture(cv); t.needsUpdate = true; return t;
-    }
-    const coma = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: comaTexture(), transparent: true, depthWrite: false, opacity: 0.5,
-    }));
-    coma.scale.setScalar(6.4);
-    coma.position.z = -0.5;
-    orbGroup.add(coma);
-
-    /* ---- comet tail : dark motes streaming off the head ---- */
-    const TAIL_DIR = new THREE.Vector3(0.52, 0.5, -0.22).normalize();
-    const TAIL_LEN = 11.0;
-    const tp1 = new THREE.Vector3().crossVectors(TAIL_DIR, new THREE.Vector3(0, 1, 0.0001)).normalize();
-    const tp2 = new THREE.Vector3().crossVectors(TAIL_DIR, tp1).normalize();
-    const TAIL_N = isMobile ? 460 : 900;
-    const tailGeo = new THREE.BufferGeometry();
-    const tailPos = new Float32Array(TAIL_N * 3);
-    const tailT   = new Float32Array(TAIL_N);
-    const tailSeed = new Float32Array(TAIL_N);
-    for (let i = 0; i < TAIL_N; i++) {
-      const at = Math.pow(Math.random(), 0.7);          // denser near the head
-      const along = -0.4 + at * TAIL_LEN;               // start just behind the head
-      const r = Math.random() * (0.22 + at * 1.7);      // cone widens down the tail
-      const ang = Math.random() * Math.PI * 2;
-      const ca = Math.cos(ang), sa = Math.sin(ang);
-      tailPos[i * 3]     = TAIL_DIR.x * along + (tp1.x * ca + tp2.x * sa) * r;
-      tailPos[i * 3 + 1] = TAIL_DIR.y * along + (tp1.y * ca + tp2.y * sa) * r;
-      tailPos[i * 3 + 2] = TAIL_DIR.z * along + (tp1.z * ca + tp2.z * sa) * r;
-      tailT[i] = at; tailSeed[i] = Math.random();
-    }
-    tailGeo.setAttribute('position', new THREE.BufferAttribute(tailPos, 3));
-    tailGeo.setAttribute('aT', new THREE.BufferAttribute(tailT, 1));
-    tailGeo.setAttribute('aSeed', new THREE.BufferAttribute(tailSeed, 1));
-    const tailMat = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false,
-      uniforms: {
-        uTime: { value: 0 }, uOpacity: { value: 1 },
-        uColor: { value: new THREE.Color(0x0c0b0a) }, uDpr: { value: DPR },
-      },
-      vertexShader: `
-        attribute float aT; attribute float aSeed;
-        uniform float uTime; uniform float uDpr;
-        varying float vA;
-        void main(){
-          vec3 p = position;
-          float w = aT * 0.3;
-          p += vec3(sin(uTime*1.1 + aSeed*6.28 + aT*7.0),
-                    cos(uTime*0.8 + aSeed*6.28)*0.7, 0.0) * w;
-          vec4 mv = modelViewMatrix * vec4(p, 1.0);
-          gl_Position = projectionMatrix * mv;
-          float sz = mix(0.20, 0.015, aT);
-          vA = pow(1.0 - aT, 1.5);
-          gl_PointSize = sz * (520.0 / -mv.z) * uDpr;
-        }`,
-      fragmentShader: `
-        uniform vec3 uColor; uniform float uOpacity; varying float vA;
-        void main(){
-          vec2 c = gl_PointCoord - 0.5; float d = length(c);
-          float a = smoothstep(0.5, 0.0, d);
-          if (a < 0.01) discard;
-          gl_FragColor = vec4(uColor, a * vA * 0.55 * uOpacity);
-        }`,
-    });
-    const tail = new THREE.Points(tailGeo, tailMat);
-    orbGroup.add(tail);
-
-    scene.add(orbGroup);
-
-    /* ============================================================
-       STARFIELD — dense dark twinkling motes on the light paper
-    ============================================================ */
-    const STAR_N = isMobile ? 1500 : 3200;
-    const starGeo = new THREE.BufferGeometry();
-    const starPos = new Float32Array(STAR_N * 3);
-    const starSize = new Float32Array(STAR_N);
-    const starPhase = new Float32Array(STAR_N);
-    for (let i = 0; i < STAR_N; i++) {
-      starPos[i * 3]     = (Math.random() - 0.5) * 60;
-      starPos[i * 3 + 1] = (Math.random() - 0.5) * 38;
-      starPos[i * 3 + 2] = -Math.random() * 95 + 9;
-      // mostly tiny specks, ~16% brighter "stars"
-      starSize[i] = (Math.random() < 0.16 ? 0.12 + Math.random() * 0.13 : 0.032 + Math.random() * 0.055);
-      starPhase[i] = Math.random() * Math.PI * 2;
-    }
-    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    starGeo.setAttribute('aSize', new THREE.BufferAttribute(starSize, 1));
-    starGeo.setAttribute('aPhase', new THREE.BufferAttribute(starPhase, 1));
-    const starMat = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false,
-      uniforms: {
-        uTime: { value: 0 }, uSpeed: { value: 0 }, uOpacity: { value: 0.72 },
-        uColor: { value: new THREE.Color(0x0c0b0a) }, uDpr: { value: DPR },
-      },
-      vertexShader: `
-        attribute float aSize; attribute float aPhase;
-        uniform float uTime; uniform float uSpeed; uniform float uDpr;
-        varying float vTw;
-        void main(){
-          float tw = 0.5 + 0.5 * sin(uTime*1.7 + aPhase);
-          vTw = 0.35 + 0.65 * tw;
-          vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          gl_Position = projectionMatrix * mv;
-          gl_PointSize = aSize * (0.7 + 0.6*tw) * (1.0 + uSpeed*1.4) * (560.0 / -mv.z) * uDpr;
-        }`,
-      fragmentShader: `
-        uniform vec3 uColor; uniform float uOpacity; varying float vTw;
-        void main(){
-          vec2 c = gl_PointCoord - 0.5; float d = length(c);
-          float a = smoothstep(0.5, 0.0, d);
-          if (a < 0.01) discard;
-          gl_FragColor = vec4(uColor, a * vTw * uOpacity);
-        }`,
-    });
-    const dust = new THREE.Points(starGeo, starMat);   // `dust` name kept for the render loop
-    scene.add(dust);
+    if (window.FOCENOFF_CONTENT) loadHeroModel(window.FOCENOFF_CONTENT);
+    else window.addEventListener('focenoff:content', (e) => loadHeroModel(e.detail), { once: true });
 
     /* ============================================================
        GALLERY — work planes flying in depth
@@ -778,32 +577,25 @@ import * as THREE from './vendor/three.module.js';
       camera.fov = lerp(camera.fov, BASE_FOV + speedEase * 11, 0.1);
       camera.updateProjectionMatrix();
 
-      // --- orb ---
-      orbUniforms.uTime.value = t;
-      orbUniforms.uOpacity.value = clamp(1 - hp * 1.15, 0, 1);
-      orbGroup.visible = orbUniforms.uOpacity.value > 0.01;
-      if (orbGroup.visible) {
-        orb.rotation.y += dt * 0.06 + pvx * 0.4;        // head spins; tail keeps orientation
-        orbGroup.rotation.x = lerp(orbGroup.rotation.x, -ppy * 0.35, 0.06);
-        orbGroup.rotation.z = lerp(orbGroup.rotation.z, ppx * 0.12, 0.06);
-        // park the comet on the right so the left-aligned hero type stays clear,
-        // but let it clearly chase the cursor through space (more centred + smaller on phones)
-        const parkX = isMobile ? 0.55 : 1.7;
-        orbGroup.position.x = lerp(orbGroup.position.x, parkX + ppx * 1.0 + pvx * 2.0, 0.06);
-        orbGroup.position.y = lerp(orbGroup.position.y, (isMobile ? 0.6 : 0.15) - ppy * 0.65 - pvy * 1.4, 0.06);
-        const s = lerp(isMobile ? 0.72 : 1, isMobile ? 0.5 : 0.7, hp);
-        orbGroup.scale.setScalar(s);
-        tailMat.uniforms.uTime.value = t;
-        tailMat.uniforms.uOpacity.value = orbUniforms.uOpacity.value;
-        coma.material.opacity = 0.5 * orbUniforms.uOpacity.value;
+      // --- hero model (chases the cursor, fades out on scroll) ---
+      if (heroModel) {
+        const heroOp = clamp(1 - hp * 1.15, 0, 1);
+        heroGroup.visible = heroOp > 0.01;
+        if (heroGroup.visible) {
+          heroModel.rotation.y += dt * 0.25 + pvx * 0.4;
+          heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.35, 0.06);
+          heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.12, 0.06);
+          // park on the right so the left-aligned hero type stays clear
+          const parkX = isMobile ? 0.55 : 1.7;
+          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 1.0 + pvx * 2.0, 0.06);
+          heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.6 : 0.15) - ppy * 0.65 - pvy * 1.4, 0.06);
+          const s = lerp(isMobile ? 0.72 : 1, isMobile ? 0.5 : 0.7, hp);
+          heroGroup.scale.setScalar(s);
+          for (let i = 0; i < heroMats.length; i++) {
+            heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
+          }
+        }
       }
-
-      // --- starfield (parallax + twinkle; brightens with scroll speed) ---
-      dust.rotation.y = ppx * 0.05;
-      dust.position.x = -ppx * 0.9;
-      dust.position.y = ppy * 0.6;
-      starMat.uniforms.uTime.value = t;
-      starMat.uniforms.uSpeed.value = speedEase;
 
       // --- gallery planes ---
       const gp = clamp((hp - 0.35) / 0.5, 0, 1); // fade in approaching works

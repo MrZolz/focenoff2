@@ -14,6 +14,9 @@
     "footerCopy": "",
     "footerContact": "CONTACT"
   },
+  "hero": {
+    "modelFile": ""
+  },
   "links": {
     "telegramDM": "https://t.me/MAKC_CBAPKA",
     "telegramChannel": "https://t.me/focenoff",

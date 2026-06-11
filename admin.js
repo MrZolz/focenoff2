@@ -195,6 +195,12 @@ function tabHero() {
         ${field('Имя — строка 2', 'texts.heroTitleLine2')}
       </div>
       ${field('Год / копирайт', 'texts.heroYear')}
+    </div></div>
+    <div class="card"><div class="stack">
+      <div class="field__label">3D-модель в hero (.glb / .gltf)</div>
+      <p class="field__hint" style="margin-top:-4px">Модель появится справа от заголовка вместо стандартной сцены: следует за курсором и растворяется при скролле. Если модель не загружена — hero остаётся без 3D-объекта.</p>
+      ${uploadZone('hero.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
+      ${getPath(content, 'hero.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="hero.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>`;
 }
 
@@ -389,6 +395,12 @@ panelContent.addEventListener('click', (e) => {
 function handleAction(ds) {
   const { act, arr, kind } = ds;
   const i = ds.i != null ? +ds.i : -1;
+
+  if (act === 'clearpath' && ds.path) {
+    setPath(content, ds.path, '');
+    renderTab();
+    return;
+  }
 
   if (act === 'addsection') {
     content.sections = content.sections || [];
