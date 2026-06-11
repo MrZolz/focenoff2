@@ -847,12 +847,28 @@ function initCursor() {
 function initVideoModal() {
   const modal    = document.getElementById('vModal');
   const iframe   = document.getElementById('vModalIframe');
+  const localVid = document.getElementById('vModalVideo');
   const closeBtn = document.getElementById('vModalClose');
   const backdrop = document.getElementById('vModalBackdrop');
   if (!modal) return;
 
-  function openModal(videoId) {
-    iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&controls=1&autoplay=1`;
+  // pause whatever is playing behind the modal; resume the same set on close
+  let pausedByModal = [];
+  function pauseBackground() {
+    pausedByModal = [];
+    document.querySelectorAll('.work-panel video').forEach(v => {
+      if (!v.paused) { v.pause(); pausedByModal.push(v); }
+    });
+    document.dispatchEvent(new CustomEvent('focenoff:modal-open'));
+  }
+  function resumeBackground() {
+    pausedByModal.forEach(v => { const p = v.play(); if (p && p.catch) p.catch(() => {}); });
+    pausedByModal = [];
+    document.dispatchEvent(new CustomEvent('focenoff:modal-close'));
+  }
+
+  function showModal() {
+    pauseBackground();
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
     if (lenis) lenis.stop();
@@ -865,34 +881,62 @@ function initVideoModal() {
     }
   }
 
+  function openModal(videoId) {
+    if (localVid) { localVid.pause(); localVid.removeAttribute('src'); localVid.hidden = true; }
+    iframe.hidden = false;
+    iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&controls=1&autoplay=1`;
+    showModal();
+  }
+
+  // motion clips play on-site from local mp4 — same modal, native <video>
+  function openLocalModal(src) {
+    if (!localVid || !src) return;
+    iframe.src = '';
+    iframe.hidden = true;
+    localVid.hidden = false;
+    localVid.src = src;
+    localVid.muted = false;
+    localVid.currentTime = 0;
+    showModal();
+    const pr = localVid.play();
+    if (pr && pr.catch) pr.catch(() => {}); // user can press play if autoplay is blocked
+  }
+
   function closeModal() {
     const box = modal.querySelector('.v-modal__box');
-    if (typeof gsap !== 'undefined') {
-      gsap.to(box, {
-        scale: 0.93, opacity: 0, duration: 0.28, ease: 'expo.in',
-        onComplete() {
-          iframe.src = '';
-          modal.hidden = true;
-          document.body.style.overflow = '';
-          if (lenis) lenis.start();
-        },
-      });
-    } else {
+    const teardown = () => {
       iframe.src = '';
+      if (localVid) { localVid.pause(); localVid.removeAttribute('src'); localVid.load(); }
       modal.hidden = true;
       document.body.style.overflow = '';
       if (lenis) lenis.start();
+      resumeBackground();
+    };
+    if (typeof gsap !== 'undefined') {
+      gsap.to(box, { scale: 0.93, opacity: 0, duration: 0.28, ease: 'expo.in', onComplete: teardown });
+    } else {
+      teardown();
     }
   }
 
-  // expose for the WebGL gallery (click a YouTube plane → open modal)
+  // expose for the WebGL gallery (click a plane → open modal)
   window.openVideoModal = openModal;
+  window.openLocalVideoModal = openLocalModal;
 
   document.addEventListener('click', e => {
     const btn = e.target.closest('.work-panel__play-btn[data-video-id]');
-    if (!btn) return;
-    e.preventDefault();
-    openModal(btn.dataset.videoId);
+    if (btn) {
+      e.preventDefault();
+      openModal(btn.dataset.videoId);
+      return;
+    }
+    // DOM gallery: clicking a motion panel (not its buttons/links) opens the clip on-site
+    const panel = e.target.closest('.work-panel:not(.work-panel--yt)');
+    if (panel && !e.target.closest('a, button')) {
+      const v = panel.querySelector('.work-panel__video');
+      const src = v && (v.currentSrc || v.src);
+      if (src) openLocalModal(src);
+    }
   });
 
   closeBtn.addEventListener('click', closeModal);

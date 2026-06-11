@@ -377,6 +377,8 @@ import * as THREE from './vendor/three.module.js';
       if (!it) return;
       if (it.kind === 'yt' && it.videoId && window.openVideoModal) {
         window.openVideoModal(it.videoId);
+      } else if (it.kind === 'motion' && it.file && window.openLocalVideoModal) {
+        window.openLocalVideoModal(toSrc(it.file));
       } else if (it.ytUrl) {
         window.open(it.ytUrl, '_blank', 'noopener');
       } else if (it.kind === 'yt' && it.videoId) {
@@ -491,7 +493,7 @@ import * as THREE from './vendor/three.module.js';
         if (elType)  elType.textContent  = it.label || '';
         if (elCount) elCount.textContent = pad2(activeI + 1) + ' / ' + pad2(N);
         if (worksOpenBtn) worksOpenBtn.hidden = false;
-        if (elOpenLb) elOpenLb.textContent = it.kind === 'yt' ? 'WATCH' : 'YOUTUBE';
+        if (elOpenLb) elOpenLb.textContent = 'WATCH'; // both kinds open on-site now
         // sound control only makes sense over a playing motion clip
         if (worksSoundBtn) {
           worksSoundBtn.hidden = it.kind !== 'motion';
@@ -667,6 +669,18 @@ import * as THREE from './vendor/three.module.js';
     }
     let resizeTmr;
     window.addEventListener('resize', () => { clearTimeout(resizeTmr); resizeTmr = setTimeout(onResize, 160); });
+
+    // modal opened from script.js → pause the active clip behind it
+    document.addEventListener('focenoff:modal-open', () => {
+      if (activeVideoPlane && activeVideoPlane.userData.video) {
+        try { activeVideoPlane.userData.video.pause(); } catch (e) {}
+      }
+    });
+    document.addEventListener('focenoff:modal-close', () => {
+      if (!document.hidden && activeVideoPlane && activeVideoPlane.userData.video) {
+        const pr = activeVideoPlane.userData.video.play(); if (pr && pr.catch) pr.catch(() => {});
+      }
+    });
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && activeVideoPlane && activeVideoPlane.userData.video) {
