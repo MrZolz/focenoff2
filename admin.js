@@ -194,7 +194,12 @@ function tabHero() {
         ${field('Имя — строка 1', 'texts.heroTitleLine1')}
         ${field('Имя — строка 2', 'texts.heroTitleLine2')}
       </div>
-      ${field('Год / копирайт', 'texts.heroYear')}
+    </div></div>
+    <div class="card"><div class="stack">
+      <div class="field__label">3D-модель в hero (.glb / .gltf)</div>
+      <p class="field__hint" style="margin-top:-4px">Модель появится справа от заголовка: следует за курсором и растворяется при скролле. Если модель не загружена — hero остаётся без 3D-объекта.</p>
+      ${uploadZone('hero.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
+      ${getPath(content, 'hero.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="hero.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>`;
 }
 
@@ -344,7 +349,6 @@ function tabFooter() {
   return tabHead('Подвал', 'Тексты внизу страницы') +
     `<div class="card"><div class="stack">
       ${field('Имя', 'texts.footerName')}
-      ${field('Копирайт', 'texts.footerCopy')}
       ${field('Подпись ссылки контакта', 'texts.footerContact')}
     </div></div>`;
 }

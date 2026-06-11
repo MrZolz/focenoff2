@@ -28,6 +28,9 @@
     </div>
   </div>
 
+  <!-- HERO CANVAS (3D HERO MODEL) -->
+  <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
+
   <!-- CURSOR -->
   <div class="cursor" id="cursor" aria-hidden="true">
     <div class="cursor__ring"></div>
@@ -145,7 +148,7 @@
   <footer class="footer">
     <div class="footer__inner">
       <span class="footer__name" data-text="footerName">MAXIM FOCENOFF</span>
-      <span class="footer__copy">© 2026</span>
+      <span class="footer__copy">Developed by <a href="https://github.com/mrzolz19" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: inherit; font-weight: 500;">MrZolz</a></span>
       <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" class="footer__contact" target="_blank" rel="noopener noreferrer">
         CONTACT →
       </a>
@@ -261,5 +264,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
   <script src="script.js"></script>
+  <script type="module" src="hero3d.js"></script>
 </body>
 </html>

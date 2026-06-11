@@ -115,6 +115,8 @@ async function fetchContent() {
 
 async function loadContent() {
   CONTENT = await fetchContent();
+  window.FOCENOFF_CONTENT = CONTENT;
+  window.dispatchEvent(new CustomEvent('focenoff:content', { detail: CONTENT }));
   applyTexts();
   applyLinks();
   renderMarquee();
@@ -324,8 +326,8 @@ function initMotionPlayer(root, clips) {
   const iconOn  = muteBtn.querySelector('.mute-icon--on');
   window.FOCENOFF_SOUND.subscribe((on) => {
     video.muted = !on;
-    if (iconOff) iconOff.hidden = on;
-    if (iconOn)  iconOn.hidden  = !on;
+    if (iconOff) iconOff.toggleAttribute('hidden', on);
+    if (iconOn)  iconOn.toggleAttribute('hidden', !on);
     muteBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     muteBtn.setAttribute('aria-label', on ? 'Выключить звук' : 'Включить звук');
   });
