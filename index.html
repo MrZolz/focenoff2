@@ -14,9 +14,6 @@
 </head>
 <body>
 
-  <!-- WEBGL STAGE (fixed, behind all content — orb + flying gallery) -->
-  <canvas class="gl-canvas" id="glCanvas" aria-hidden="true"></canvas>
-
   <!-- PRELOADER -->
   <div class="preloader" id="preloader" aria-hidden="true">
     <div class="preloader__center">
@@ -45,11 +42,6 @@
         <img src="ava.png" alt="" class="header__logo-img" aria-hidden="true" width="28" height="28" />
         <span class="header__logo-text" data-text="headerLogo">FOCENOFF</span>
       </a>
-      <button class="header__mode" id="modeToggle" type="button" aria-label="Переключить версию сайта (FULL — иммерсивная, LITE — простая)">
-        <span class="header__mode-opt" data-mode="full">FULL</span>
-        <span class="header__mode-sep" aria-hidden="true">/</span>
-        <span class="header__mode-opt" data-mode="lite">LITE</span>
-      </button>
       <button class="header__menu-btn" id="menuToggle" aria-label="Открыть меню" aria-expanded="false">
         <span class="header__menu-icon" aria-hidden="true">
           <span></span><span></span>
@@ -103,40 +95,9 @@
 
   <main>
 
-    <!-- WORKS — WebGL flying gallery (desktop) · DOM fallback (mobile/no-WebGL) -->
+    <!-- WORKS — chapters + stacked items, normal vertical page scroll -->
     <section class="works" id="works">
-      <!-- scroll driver: height injected by JS in WebGL mode -->
-      <div class="works__scroll" id="worksScroll" aria-hidden="true"></div>
-
-      <!-- DOM fallback gallery (shown when WebGL inactive) -->
-      <div class="works-hz works-dom" id="worksDom">
-        <div class="works-hz__track" id="worksTrack"></div>
-      </div>
-
-      <!-- HUD overlay (caption + open + progress + index) -->
-      <div class="works__hud" id="worksHud">
-        <div class="works__caption">
-          <span class="works__caption-title" id="worksTitle"></span>
-          <span class="works__caption-type" id="worksType"></span>
-        </div>
-        <button class="works__sound" id="worksSound" type="button" aria-label="Включить звук" aria-pressed="false" hidden>
-          <svg class="works__sound-ic works__sound-ic--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M11 5 6 9H2v6h4l5 4V5z"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>
-          </svg>
-          <svg class="works__sound-ic works__sound-ic--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
-            <path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>
-          </svg>
-          <span class="works__sound-lbl">SOUND</span>
-        </button>
-        <button class="works__open" id="worksOpen" type="button" hidden>
-          <span id="worksOpenLabel">WATCH</span>
-          <span aria-hidden="true">↗</span>
-        </button>
-        <div class="works__progress">
-          <div class="works__bar" id="worksBar"></div>
-        </div>
-        <span class="works__count" id="worksCount">01</span>
-      </div>
+      <div class="works__list" id="worksTrack"></div>
     </section>
 
     <!-- STATEMENT -->
@@ -211,70 +172,88 @@
 
   <!-- TEMPLATES -->
 
-  <!-- Chapter title card (inter-title between sections in horizontal scroll) -->
+  <!-- Chapter header (between sections in the vertical flow) -->
   <template id="tplChapterCard">
-    <div class="work-chapter" data-work-chapter>
-      <div class="work-chapter__inner">
-        <span class="work-chapter__num"></span>
-        <h2 class="work-chapter__title"></h2>
-        <span class="work-chapter__count"></span>
+    <div class="works__chapter" data-work-chapter>
+      <div class="works__chapter-header">
+        <span class="works__chapter-num"></span>
+        <h2 class="works__chapter-title"></h2>
+        <span class="works__chapter-count"></span>
       </div>
     </div>
   </template>
 
-  <!-- Full-screen video panel (motion clips) -->
-  <template id="tplWorkPanel">
-    <div class="work-panel" data-work>
-      <video class="work-panel__video" muted playsinline preload="metadata" loop></video>
-      <div class="work-panel__overlay">
-        <div class="work-panel__top">
-          <span class="work-panel__num"></span>
+  <!-- Motion player — one inline player per motion section -->
+  <template id="tplMotion">
+    <article class="work-item work-item--motion" data-work>
+      <div class="work-item__media motion-player">
+        <img class="work-item__thumb motion-player__thumb" alt="Превью motion нарезки" loading="lazy" />
+        <video class="motion-player__video" playsinline preload="metadata"></video>
+        <button class="work-item__play motion-player__play" aria-label="Воспроизвести motion нарезку">
+          <span class="work-item__play-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+          <span class="work-item__play-label">PLAY</span>
+        </button>
+        <button class="motion-nav motion-nav--prev" aria-label="Предыдущая нарезка">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="motion-nav motion-nav--next" aria-label="Следующая нарезка">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="motion-counter" aria-live="polite">
+          <span class="motion-counter__cur">1</span>
+          <span class="motion-counter__sep">/</span>
+          <span class="motion-counter__total"></span>
         </div>
-        <div class="work-panel__bottom">
-          <div class="work-panel__info">
-            <h3 class="work-panel__title"></h3>
-            <span class="work-panel__type"></span>
-          </div>
-          <a class="work-panel__yt-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="Оригинал на YouTube">
-            YouTube ↗
-          </a>
-        </div>
-      </div>
-      <button class="work-panel__mute" aria-label="Включить звук" hidden>
-        <svg class="mute-icon mute-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-          <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
-        </svg>
-        <svg class="mute-icon mute-icon--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" hidden>
-          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-        </svg>
-      </button>
-    </div>
-  </template>
-
-  <!-- YouTube card (full-screen thumbnail) -->
-  <template id="tplVideoCard">
-    <div class="work-panel work-panel--yt" data-work>
-      <div class="work-panel__media">
-        <img class="work-panel__thumb" loading="lazy" alt="" />
-        <button class="work-panel__play-btn" aria-label="Смотреть видео">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <button class="motion-mute" aria-label="Включить звук" aria-pressed="false" hidden>
+          <svg class="mute-icon mute-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+          </svg>
+          <svg class="mute-icon mute-icon--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" hidden>
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
         </button>
       </div>
-      <div class="work-panel__overlay">
-        <div class="work-panel__top">
-          <span class="work-panel__num"></span>
+      <div class="work-item__caption">
+        <div class="work-item__caption-left">
+          <span class="work-item__index"></span>
+          <h3 class="work-item__name motion-title"></h3>
+          <span class="work-item__type motion-type"></span>
         </div>
-        <div class="work-panel__bottom">
-          <div class="work-panel__info">
-            <h3 class="work-panel__title"></h3>
-            <span class="work-panel__type"></span>
-          </div>
-          <span class="work-panel__stat"></span>
+        <div class="work-item__caption-right">
+          <span class="work-item__stat motion-views"></span>
+          <a href="#" class="work-item__yt-link motion-yt-link" target="_blank" rel="noopener noreferrer" aria-label="Оригинал на YouTube">Оригинал ↗</a>
         </div>
       </div>
-    </div>
+    </article>
+  </template>
+
+  <!-- YouTube card (videos section) -->
+  <template id="tplVideoCard">
+    <article class="work-item work-item--yt" data-work>
+      <div class="work-item__media">
+        <img class="work-item__thumb" loading="lazy" alt="" />
+        <button class="work-item__play" aria-label="Смотреть видео">
+          <span class="work-item__play-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+          <span class="work-item__play-label">PLAY</span>
+        </button>
+      </div>
+      <div class="work-item__caption">
+        <div class="work-item__caption-left">
+          <span class="work-item__index"></span>
+          <h3 class="work-item__name"><a target="_blank" rel="noopener noreferrer"></a></h3>
+          <span class="work-item__type"></span>
+        </div>
+        <div class="work-item__caption-right">
+          <span class="work-item__stat"></span>
+        </div>
+      </div>
+    </article>
   </template>
 
   <!-- SCRIPTS -->
@@ -282,6 +261,5 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
   <script src="script.js"></script>
-  <script type="module" src="webgl.js"></script>
 </body>
 </html>
