@@ -1,0 +1,5 @@
+[ 4309004ms] [VERBOSE] [DOM] Password forms should have (optionally hidden) username fields for accessibility: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8899/admin:0
+[ 4965886ms] [WARNING] [webgl] disabled → reduced motion @ http://localhost:8899/webgl.js:43
+[ 4970350ms] [WARNING] [webgl] disabled → reduced motion @ http://localhost:8899/webgl.js:43
+[ 4980177ms] [WARNING] [webgl] disabled → reduced motion @ http://localhost:8899/webgl.js:43
+[ 4984157ms] [WARNING] [webgl] disabled → reduced motion @ http://localhost:8899/webgl.js:43

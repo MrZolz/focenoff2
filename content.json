@@ -1,0 +1,129 @@
+{
+  "texts": {
+    "headerLogo": "FOCENOFF",
+    "heroEyebrow": "VIDEO EDITOR",
+    "heroTitleLine1": "MAXIM",
+    "heroTitleLine2": "FOCENOFF",
+    "heroYear": "",
+    "statementText": "ВИДЕОМОНТАЖЁР. РАБОТАЮ С КАНАЛАМИ ОТ *2M+* ПОДПИСЧИКОВ. YOUTUBE · REELS · BRAND CONTENT.",
+    "statementCta": "ИЛИ НАПИШИ В TELEGRAM",
+    "contactLabel": "LET'S WORK TOGETHER!",
+    "contactCtaLine1": "НАПИСАТЬ",
+    "contactCtaLine2": "В TELEGRAM",
+    "footerName": "MAXIM FOCENOFF",
+    "footerCopy": "",
+    "footerContact": "CONTACT"
+  },
+  "links": {
+    "telegramDM": "https://t.me/MAKC_CBAPKA",
+    "telegramChannel": "https://t.me/focenoff",
+    "youtube": "https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ",
+    "tiktok": "https://www.tiktok.com/@focenoff"
+  },
+  "marquee": [
+    "MOTION",
+    "2M+ SUBSCRIBERS",
+    "YOUTUBE",
+    "LONG VIDEO",
+    "BIG CASES",
+    "TELEGRAM",
+    "REELS",
+    "BRAND CONTENT",
+    "MONTAGE",
+    "TIKTOK",
+    "SHORTS VIDEO"
+  ],
+  "menu": [
+    {
+      "text": "WORKS",
+      "href": "#works"
+    },
+    {
+      "text": "CONTACT",
+      "href": "#contact"
+    },
+    {
+      "text": "ABOUT",
+      "href": "#statement"
+    }
+  ],
+  "sections": [
+    {
+      "id": "motion",
+      "type": "motion",
+      "num": "01",
+      "title": "MOTION",
+      "thumbnail": "https://focen.carrd.co/assets/videos/video02_thumbnail.jpg?v=032a4ee1",
+      "clips": [
+        {
+          "file": "scammers.mp4",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is"
+        },
+        {
+          "file": "scammers (2).mp4",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is"
+        },
+        {
+          "file": "scammers (3).mp4",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is"
+        },
+        {
+          "file": "scammers (4).mp4",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is"
+        },
+        {
+          "file": "scammers (5).mp4",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is"
+        },
+        {
+          "file": "харчевников.mp4",
+          "title": "ХАРЧЕВНИКОВ",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://www.youtube.com/watch?v=n75_-ntNL2I"
+        }
+      ]
+    },
+    {
+      "id": "long-videos",
+      "type": "videos",
+      "num": "02",
+      "title": "LONG VIDEOS",
+      "items": [
+        {
+          "thumbnail": "media/zhbMghFRk_Q_maxres.jpg",
+          "videoId": "zhbMghFRk_Q",
+          "name": "КЭШЗЛО",
+          "nameUrl": "https://youtu.be/zhbMghFRk_Q?si=j015K6GLllKIuqVI",
+          "type": "УСТРОИЛСЯ РАБОТАТЬ В СКАМ ОФИС",
+          "stat": "*350K* views"
+        },
+        {
+          "thumbnail": "media/1xpPfVB1R64_maxres.jpg",
+          "videoId": "1xpPfVB1R64",
+          "name": "КЭШЗЛО",
+          "nameUrl": "https://www.youtube.com/watch?v=1xpPfVB1R64",
+          "type": "30 ДНЕЙ ТОРЧАЛ НА САМЫХ ПОПУЛЯРНЫХ Н##КОТИКАХ",
+          "stat": "*540K* views"
+        },
+        {
+          "thumbnail": "media/video09_thumbnail.jpg",
+          "videoId": "2KrKQPX0m5A",
+          "name": "FOCENOFF",
+          "nameUrl": "https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ",
+          "type": "Я – МОНТАЖЕР SCAMMERS (не кликбейт)",
+          "stat": "*13K* views"
+        }
+      ]
+    }
+  ]
+}

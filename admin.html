@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>FOCENOFF — Панель управления</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23000'/><text x='50%' y='62%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='52' fill='%23cadae0'>F</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <!-- ЭКРАН ВХОДА -->
+  <div class="login" id="loginScreen">        
+    <form class="login__box" id="loginForm">
+      <div class="login__logo">FOCENOFF</div>
+      <p class="login__sub">Панель управления</p>
+      <label class="field">
+        <span class="field__label">Пароль</span>
+        <input type="password" id="loginPassword" class="field__input" autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="btn btn--primary login__btn">Войти</button>
+      <p class="login__error" id="loginError" hidden>Неверный пароль</p>
+    </form>
+  </div>
+
+  <!-- ПАНЕЛЬ -->
+  <div class="app" id="app" hidden>
+    <!-- Верхняя панель -->
+    <header class="topbar">
+      <div class="topbar__brand">FOCENOFF<span>· панель</span></div>
+      <div class="topbar__actions">
+        <a href="/" target="_blank" rel="noopener" class="btn btn--ghost">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Открыть сайт
+        </a>
+        <button class="btn btn--ghost" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Выйти</button>
+        <button class="btn btn--primary" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> Сохранить</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- Сайдбар -->
+      <nav class="sidebar" id="sidebar" aria-label="Разделы панели">
+        <button class="sidebar__item is-active" data-tab="hero"><i class="fa-solid fa-heading"></i> Шапка / Hero</button>
+        <button class="sidebar__item" data-tab="marquee"><i class="fa-solid fa-ellipsis"></i> Бегущая строка</button>
+        <button class="sidebar__item" data-tab="menu"><i class="fa-solid fa-bars"></i> Меню</button>
+        <button class="sidebar__item" data-tab="sections"><i class="fa-solid fa-film"></i> Разделы и видео</button>
+        <button class="sidebar__item" data-tab="contact"><i class="fa-solid fa-paper-plane"></i> Контакт</button>
+        <button class="sidebar__item" data-tab="about"><i class="fa-solid fa-align-left"></i> О себе</button>
+        <button class="sidebar__item" data-tab="footer"><i class="fa-solid fa-shoe-prints"></i> Подвал</button>
+        <button class="sidebar__item" data-tab="links"><i class="fa-solid fa-link"></i> Ссылки</button>
+      </nav>
+
+      <!-- Контент вкладки -->
+      <main class="panel" id="panelContent"></main>
+    </div>
+  </div>
+
+  <!-- Тосты -->
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

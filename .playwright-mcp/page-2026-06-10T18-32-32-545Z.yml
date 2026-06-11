@@ -1,0 +1,160 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]: FOCENOFF
+    - generic [ref=e8]: "11"
+  - banner [ref=e9]:
+    - generic [ref=e10]:
+      - link "На главную" [ref=e11]:
+        - /url: "#top"
+        - img [ref=e12]
+        - generic [ref=e13]: FOCENOFF
+      - button "Открыть меню" [ref=e14]
+  - dialog:
+    - generic:
+      - navigation:
+        - list:
+          - listitem:
+            - link:
+              - /url: "#works"
+              - generic: WORKS
+          - listitem:
+            - link:
+              - /url: "#contact"
+              - generic: CONTACT
+          - listitem:
+            - link:
+              - /url: "#statement"
+              - generic: ABOUT
+      - generic:
+        - link:
+          - /url: https://t.me/MAKC_CBAPKA
+          - text: Telegram DM
+        - link:
+          - /url: https://t.me/focenoff
+          - text: Channel
+        - link:
+          - /url: https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ
+          - text: YouTube
+        - link:
+          - /url: https://www.tiktok.com/@focenoff
+          - text: TikTok
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]: Video Editor
+        - generic [ref=e22]: ·
+        - generic [ref=e23]: Russia
+      - heading "M A X I M F O C E N O F F" [level=1] [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e27]: M
+          - generic [ref=e29]: A
+          - generic [ref=e31]: X
+          - generic [ref=e33]: I
+          - generic [ref=e35]: M
+        - generic [ref=e36]:
+          - generic [ref=e38]: F
+          - generic [ref=e40]: O
+          - generic [ref=e42]: C
+          - generic [ref=e44]: E
+          - generic [ref=e46]: "N"
+          - generic [ref=e48]: O
+          - generic [ref=e50]: F
+          - generic [ref=e52]: F
+    - generic [ref=e53]:
+      - generic [ref=e54]: 2M+ ПОДПИСЧИКОВ · YOUTUBE · REELS
+      - link "К работам" [ref=e55]:
+        - /url: "#works"
+        - generic [ref=e57]: SCROLL
+    - generic [ref=e58]: "01"
+  - generic [ref=e60]:
+    - generic [ref=e61]: MOTION
+    - generic [ref=e62]: ·
+    - generic [ref=e63]: 2M+ SUBSCRIBERS
+    - generic [ref=e64]: ·
+    - generic [ref=e65]: YOUTUBE
+    - generic [ref=e66]: ·
+    - generic [ref=e67]: LONG VIDEO
+    - generic [ref=e68]: ·
+    - generic [ref=e69]: BIG CASES
+    - generic [ref=e70]: ·
+    - generic [ref=e71]: TELEGRAM
+    - generic [ref=e72]: ·
+    - generic [ref=e73]: REELS
+    - generic [ref=e74]: ·
+    - generic [ref=e75]: BRAND CONTENT
+    - generic [ref=e76]: ·
+    - generic [ref=e77]: MONTAGE
+    - generic [ref=e78]: ·
+    - generic [ref=e79]: TIKTOK
+    - generic [ref=e80]: ·
+    - generic [ref=e81]: SHORTS VIDEO
+    - generic [ref=e82]: ·
+    - generic [ref=e83]: MOTION
+    - generic [ref=e84]: ·
+    - generic [ref=e85]: 2M+ SUBSCRIBERS
+    - generic [ref=e86]: ·
+    - generic [ref=e87]: YOUTUBE
+    - generic [ref=e88]: ·
+    - generic [ref=e89]: LONG VIDEO
+    - generic [ref=e90]: ·
+    - generic [ref=e91]: BIG CASES
+    - generic [ref=e92]: ·
+    - generic [ref=e93]: TELEGRAM
+    - generic [ref=e94]: ·
+    - generic [ref=e95]: REELS
+    - generic [ref=e96]: ·
+    - generic [ref=e97]: BRAND CONTENT
+    - generic [ref=e98]: ·
+    - generic [ref=e99]: MONTAGE
+    - generic [ref=e100]: ·
+    - generic [ref=e101]: TIKTOK
+    - generic [ref=e102]: ·
+    - generic [ref=e103]: SHORTS VIDEO
+    - generic [ref=e104]: ·
+  - main [ref=e105]:
+    - generic [ref=e106]:
+      - generic:
+        - generic: "01"
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - paragraph [ref=e109]:
+          - generic [ref=e111]: ВИДЕОМОНТАЖЁР.
+          - generic [ref=e113]: РАБОТАЮ
+          - generic [ref=e115]: С
+          - generic [ref=e117]: КАНАЛАМИ
+          - generic [ref=e119]: ОТ
+          - generic [ref=e122]: 2M+
+          - generic [ref=e124]: ПОДПИСЧИКОВ.
+          - generic [ref=e126]: YOUTUBE
+          - generic [ref=e128]: ·
+          - generic [ref=e130]: REELS
+          - generic [ref=e132]: ·
+          - generic [ref=e134]: BRAND
+          - generic [ref=e136]: CONTENT.
+        - link "ИЛИ НАПИШИ В TELEGRAM" [ref=e137]:
+          - /url: https://t.me/MAKC_CBAPKA
+          - generic [ref=e138]: ИЛИ НАПИШИ В TELEGRAM
+          - generic [ref=e139]: →
+      - generic [ref=e140]: "03"
+    - generic [ref=e141]:
+      - generic [ref=e142]:
+        - paragraph [ref=e143]: Готов к новым проектам
+        - link "Написать в Telegram" [ref=e144]:
+          - /url: https://t.me/MAKC_CBAPKA
+          - generic [ref=e145]: НАПИСАТЬ
+          - generic [ref=e146]: В TELEGRAM
+          - generic [ref=e147]: ↗
+        - generic [ref=e148]:
+          - link "TG Channel" [ref=e149]:
+            - /url: https://t.me/focenoff
+          - link "YouTube" [ref=e150]:
+            - /url: https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ
+          - link "TikTok" [ref=e151]:
+            - /url: https://www.tiktok.com/@focenoff
+      - generic [ref=e152]: "04"
+  - contentinfo [ref=e153]:
+    - generic [ref=e154]:
+      - generic [ref=e155]: MAXIM FOCENOFF
+      - generic [ref=e156]: © 2026
+      - link "CONTACT →" [ref=e157]:
+        - /url: https://t.me/MAKC_CBAPKA
