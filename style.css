@@ -96,8 +96,6 @@ iframe { border: none; display: block; }
 }
 body.mode-webgl .gl-canvas { opacity: 1; }
 body.mode-webgl .gl-canvas.is-dimmed { opacity: 0; }
-/* 2D hero particle fallback only when WebGL is off */
-body.mode-webgl .hero__canvas { display: none; }
 
 /* Content sits above the WebGL canvas; transparent zones reveal the 3D */
 .hero,
@@ -330,6 +328,26 @@ body::after {
   color: var(--white);
 }
 
+/* FULL / LITE site-version switch (laconic text toggle) */
+.header__mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: clamp(18px, 3vw, 36px);
+  padding: 12px 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--white);
+  touch-action: manipulation;
+}
+.header__mode-opt { opacity: 0.3; transition: opacity 0.25s; }
+.header__mode-opt.is-active { opacity: 1; }
+.header__mode-sep { opacity: 0.3; }
+.header__mode:hover .header__mode-opt:not(.is-active) { opacity: 0.6; }
+
 .header__menu-btn {
   display: flex;
   align-items: center;
@@ -457,15 +475,6 @@ body::after {
   padding: 0 clamp(20px, 5vw, 72px);
   overflow-x: clip;
   overflow-y: hidden;
-}
-
-.hero__canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.6;
-  pointer-events: none;
 }
 
 .hero__content {

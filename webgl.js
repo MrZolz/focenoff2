@@ -15,14 +15,19 @@ import * as THREE from './vendor/three.module.js';
   'use strict';
 
   /* ---------- capability gate ---------------------------------- */
-  // The immersive scene runs wherever WebGL is available — only reduced-motion
-  // users and genuinely incapable / very low-end devices get the calm DOM fallback.
+  // The immersive scene is the default everywhere WebGL is available.
+  // The user can override it with the header FULL/LITE toggle:
+  //   'lite' → always the DOM version, 'full' → immersive even with
+  //   reduced-motion, 'auto' → immersive unless reduced-motion / very
+  //   low-end device.
+  const manualMode   = window.FOCENOFF_MODE || 'auto';
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const finePointer  = matchMedia('(pointer: fine)').matches;
   const isMobile     = !finePointer || window.innerWidth < 768;
   const lowEnd       = (navigator.deviceMemory && navigator.deviceMemory <= 1);
 
-  if (reduceMotion || lowEnd) return; // DOM fallback handles it
+  if (manualMode === 'lite') return; // user chose the simple version
+  if (manualMode !== 'full' && (reduceMotion || lowEnd)) return; // DOM fallback handles it
 
   const canvas = document.getElementById('glCanvas');
   if (!canvas) return;
@@ -867,7 +872,7 @@ import * as THREE from './vendor/three.module.js';
       sizeWorksScroll();
       // (mobile is supported now — no narrow/coarse fallback here. Only a real
       //  reduced-motion preference change drops the scene.)
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (manualMode !== 'full' && matchMedia('(prefers-reduced-motion: reduce)').matches) {
         cancelAnimationFrame(rafId);
         if (activeVideoPlane) stopVideo(activeVideoPlane);
         fallbackToDom('reduced motion');

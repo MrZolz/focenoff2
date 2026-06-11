@@ -1,6 +1,22 @@
 'use strict';
 
 /* ============================================================
+   SITE MODE — immersive (full) vs simple (lite)
+   The user can override auto-detection with the header toggle.
+   'auto' (default) → immersive wherever WebGL runs; 'lite' → DOM
+   version; 'full' → force immersive even with reduced-motion.
+   webgl.js reads window.FOCENOFF_MODE before booting the scene.
+============================================================ */
+window.FOCENOFF_MODE = (() => {
+  try {
+    const m = localStorage.getItem('focenoff_mode');
+    if (m === 'lite' || m === 'full') return m;
+  } catch (e) { /* storage unavailable → auto */ }
+  return 'auto';
+})();
+if (window.FOCENOFF_MODE === 'lite') document.documentElement.classList.add('mode-lite');
+
+/* ============================================================
    CONTENT LAYER
 ============================================================ */
 let CONTENT = null;
@@ -350,118 +366,6 @@ function fitHeroTitle() {
 
   // Apply inline size directly to each line (overrides CSS)
   lines.forEach(l => { l.style.fontSize = newFs + 'px'; });
-}
-
-/* ============================================================
-   HERO CANVAS — interactive particle field
-============================================================ */
-function initHeroCanvas() {
-  const canvas = document.getElementById('heroCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  let W = 0, H = 0;
-  let particles = [];
-  let mouseX = -9999, mouseY = -9999;
-  let raf = null;
-
-  function resize() {
-    W = canvas.width  = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-    buildParticles();
-  }
-
-  function buildParticles() {
-    const count = Math.min(Math.floor((W * H) / 7000), 140);
-    particles = Array.from({ length: count }, () => ({
-      x:  Math.random() * W,
-      y:  Math.random() * H,
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: (Math.random() - 0.5) * 0.25,
-      r:  Math.random() * 1.1 + 0.3,
-      a:  Math.random() * 0.22 + 0.04,
-    }));
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-
-    particles.forEach(p => {
-      const dx   = p.x - mouseX;
-      const dy   = p.y - mouseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < 120) {
-        const force = (120 - dist) / 120;
-        p.vx += (dx / dist) * force * 0.4;
-        p.vy += (dy / dist) * force * 0.4;
-      }
-
-      p.vx *= 0.97;
-      p.vy *= 0.97;
-      p.x  += p.vx;
-      p.y  += p.vy;
-
-      if (p.x < 0) p.x = W;
-      if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H;
-      if (p.y > H) p.y = 0;
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(12,11,10,${p.a})`;
-      ctx.fill();
-    });
-
-    // Draw connections
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const d  = Math.sqrt(dx * dx + dy * dy);
-        if (d < 90) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(12,11,10,${0.06 * (1 - d / 90)})`;
-          ctx.lineWidth   = 0.5;
-          ctx.stroke();
-        }
-      }
-    }
-
-    raf = requestAnimationFrame(draw);
-  }
-
-  const hero = canvas.parentElement;
-  hero.addEventListener('mousemove', e => {
-    const rect = hero.getBoundingClientRect();
-    mouseX = e.clientX - rect.left;
-    mouseY = e.clientY - rect.top;
-  });
-  hero.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
-
-  // Pause canvas when hero scrolls out to save resources
-  if (typeof IntersectionObserver !== 'undefined') {
-    new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        if (!raf) { resize(); draw(); }
-      } else {
-        cancelAnimationFrame(raf);
-        raf = null;
-      }
-    }, { threshold: 0.05 }).observe(hero);
-  }
-
-  resize();
-  draw();
-
-  let resizeTimer;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(resize, 150);
-  });
 }
 
 /* ============================================================
@@ -1009,6 +913,25 @@ function initAnchorScroll() {
 /* ============================================================
    FALLBACK (no GSAP)
 ============================================================ */
+/* ============================================================
+   MODE TOGGLE — FULL (immersive) / LITE (simple) header switch
+============================================================ */
+function initModeToggle() {
+  const btn = document.getElementById('modeToggle');
+  if (!btn) return;
+  // what actually booted (webgl.js sets mode-webgl synchronously before DOMContentLoaded)
+  const active = document.body.classList.contains('mode-webgl') ? 'full' : 'lite';
+  btn.querySelectorAll('.header__mode-opt').forEach(el => {
+    el.classList.toggle('is-active', el.dataset.mode === active);
+  });
+  btn.addEventListener('click', () => {
+    const target = active === 'full' ? 'lite' : 'full';
+    try { localStorage.setItem('focenoff_mode', target); } catch (e) { /* ignore */ }
+    // full reload = clean teardown of the WebGL scene / GSAP triggers
+    window.location.reload();
+  });
+}
+
 function initFallbackReveal() {
   document.querySelectorAll('[data-work], [data-work-chapter]').forEach(el => {
     el.style.opacity = '1';
@@ -1040,8 +963,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCursor();
   initVideoModal();
   initAnchorScroll();
-  // 2D particle hero is the no-WebGL fallback; WebGL hides #heroCanvas
-  if (!document.body.classList.contains('mode-webgl')) initHeroCanvas();
+  initModeToggle();
 
   // Fit hero title after fonts load (ensures chars measured with correct font metrics).
   // font-display:swap means fonts.ready can resolve while AKONY is still

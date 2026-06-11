@@ -45,6 +45,11 @@
         <img src="ava.png" alt="" class="header__logo-img" aria-hidden="true" width="28" height="28" />
         <span class="header__logo-text" data-text="headerLogo">FOCENOFF</span>
       </a>
+      <button class="header__mode" id="modeToggle" type="button" aria-label="Переключить версию сайта (FULL — иммерсивная, LITE — простая)">
+        <span class="header__mode-opt" data-mode="full">FULL</span>
+        <span class="header__mode-sep" aria-hidden="true">/</span>
+        <span class="header__mode-opt" data-mode="lite">LITE</span>
+      </button>
       <button class="header__menu-btn" id="menuToggle" aria-label="Открыть меню" aria-expanded="false">
         <span class="header__menu-icon" aria-hidden="true">
           <span></span><span></span>
@@ -70,7 +75,6 @@
 
   <!-- HERO -->
   <section class="hero" id="top">
-    <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
     <div class="hero__content">
       <div class="hero__eyebrow">
         <span class="hero__eyebrow-tag">Video Editor</span>
