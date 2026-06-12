@@ -15,8 +15,8 @@
   "hero": {
     "modelFile": "media/iPhone 17 Pro.glb"
   },
-  "about": {
-    "modelFile": ""
+  "about": { 
+    "modelFile": "media/low_poly_stack_of_money.glb" 
   },
   "contact": {
     "modelFile": ""
