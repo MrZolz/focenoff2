@@ -132,8 +132,9 @@ import * as THREE from './vendor/three.module.js';
       if (model) {
         group.visible = op > 0.02;
         if (group.visible) {
-          model.rotation.y += dt * 0.18;
-          model.rotation.x += dt * 0.06;
+          model.rotation.x += dt * 0.22;
+          model.rotation.y += dt * 0.07;
+          model.rotation.z += dt * 0.04;
           const s = lerp(0.85, 1, op);
           group.scale.setScalar(s);
           for (let i = 0; i < mats.length; i++) {

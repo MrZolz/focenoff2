@@ -1078,12 +1078,15 @@ body::after {
 ============================================================ */
 .model-spot {
   position: relative;
-  height: 70vh;
-  min-height: 400px;
+  height: 50vh;
+  min-height: 340px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 .model-spot .section__index {
   position: absolute;
