@@ -104,52 +104,28 @@ import * as THREE from './vendor/three.module.js';
 
     function init(content) {
       const file = modelPathFn(content);
-      loadModel(file, group, mats, canvas, (obj) => { model = obj; });
+      loadModel(file, group, mats, canvas, (obj) => {
+        model = obj;
+        group.visible = true;
+        canvas.classList.add('is-live');
+      });
     }
 
     if (window.FOCENOFF_CONTENT) init(window.FOCENOFF_CONTENT);
     else window.addEventListener('focenoff:content', (e) => init(e.detail), { once: true });
 
-    const section = document.getElementById(sectionId);
     const clock = new THREE.Clock();
-    let hidden = true;
 
     function frame() {
       const dt = Math.min(clock.getDelta(), 0.05);
-      const t  = clock.elapsedTime;
-
-      // visibility: model appears when its section is visible
-      const vh = window.innerHeight;
-      let op = 0;
-      if (section) {
-        const r = section.getBoundingClientRect();
-        // fade in as section enters viewport, out as it leaves
-        const inTop  = clamp((vh - r.top) / vh, 0, 1);
-        const inBot  = clamp((r.bottom) / vh, 0, 1);
-        op = inTop * inBot;
-      }
 
       if (model) {
-        group.visible = op > 0.02;
-        if (group.visible) {
-          model.rotation.x += dt * 0.22;
-          model.rotation.y += dt * 0.07;
-          model.rotation.z += dt * 0.04;
-          const s = lerp(0.85, 1, op);
-          group.scale.setScalar(s);
-          for (let i = 0; i < mats.length; i++) {
-            mats[i].opacity = mats[i].userData.baseOpacity * op;
-          }
-        }
+        model.rotation.y += dt * 0.25;
+        model.rotation.x += dt * 0.04;
+        model.rotation.z += dt * 0.02;
       }
 
-      const wantHidden = op <= 0.02 || !model;
-      if (wantHidden !== hidden) {
-        hidden = wantHidden;
-        canvas.classList.toggle('is-live', !hidden);
-      }
-
-      if (!hidden && !document.hidden) renderer.render(scene, camera);
+      if (!document.hidden) renderer.render(scene, camera);
       requestAnimationFrame(frame);
     }
 
@@ -162,7 +138,6 @@ import * as THREE from './vendor/three.module.js';
     }, { passive: true });
 
     requestAnimationFrame(frame);
-    return { canvas, renderer };
   }
 
   /* ============================================================
