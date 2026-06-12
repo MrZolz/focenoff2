@@ -175,19 +175,19 @@ import * as THREE from './vendor/three.module.js';
       camera.lookAt(-ppx * 1.7 * par + autoX * 0.5, ppy * 1.25 * par + autoY * 0.5, -5);
       camera.rotation.z = -ppx * 0.05;
 
-      /* ---- hero model ---- */
+      /* ---- hero model — behind the title text ---- */
       const heroOp = clamp(1 - hp * 1.15, 0, 1);
       if (heroModel) {
         heroGroup.visible = heroOp > 0.01;
         if (heroGroup.visible) {
-          heroModel.rotation.y += dt * 0.25 + pvx * 0.4;
-          heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.35, 0.06);
-          heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.12, 0.06);
-          const parkX = isMobile ? 0.65 : 2.2;
-          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.7 + pvx * 1.4 + hp * 0.9, 0.06);
-          heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.6 : 0.15) - ppy * 0.65 - pvy * 1.4, 0.06);
-          const s  = lerp(isMobile ? 0.8 : 0.95, isMobile ? 1.25 : 1.55, hp);
-          heroGroup.position.z = hp * 3.2;
+          heroModel.rotation.y += dt * 0.22 + pvx * 0.3;
+          heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.25, 0.05);
+          heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.08, 0.05);
+          const parkX = isMobile ? 0 : 0;
+          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5 + pvx * 1.0 + hp * 0.4, 0.05);
+          heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3 - pvy * 0.6, 0.05);
+          const s  = lerp(isMobile ? 0.8 : 0.9, isMobile ? 1.1 : 1.3, hp);
+          heroGroup.position.z = hp * 2.5;
           heroGroup.scale.setScalar(s);
           for (let i = 0; i < heroMats.length; i++) {
             heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
@@ -195,23 +195,35 @@ import * as THREE from './vendor/three.module.js';
         }
       }
 
-      /* ---- about model — always visible, Y-spin ---- */
-      if (aboutModel) {
-        aboutGroup.visible = true;
-        aboutModel.rotation.y += dt * 0.25;
-        aboutModel.rotation.x += dt * 0.04;
-        aboutModel.rotation.z += dt * 0.02;
+      /* ---- about model — visible only when its section is on screen ---- */
+      const aboutSpot = document.getElementById('modelAboutSpot');
+      let aboutInView = false;
+      if (aboutSpot && aboutModel) {
+        const r = aboutSpot.getBoundingClientRect();
+        aboutInView = r.top < vh && r.bottom > 0;
+        aboutGroup.visible = aboutInView;
+        if (aboutInView) {
+          aboutModel.rotation.y += dt * 0.25;
+          aboutModel.rotation.x += dt * 0.04;
+          aboutModel.rotation.z += dt * 0.02;
+        }
       }
 
-      /* ---- contact model — always visible, Y-spin ---- */
-      if (contactModel) {
-        contactGroup.visible = true;
-        contactModel.rotation.y += dt * 0.25;
-        contactModel.rotation.x += dt * 0.04;
-        contactModel.rotation.z += dt * 0.02;
+      /* ---- contact model — visible only when its section is on screen ---- */
+      const contactSpot = document.getElementById('modelContactSpot');
+      let contactInView = false;
+      if (contactSpot && contactModel) {
+        const r = contactSpot.getBoundingClientRect();
+        contactInView = r.top < vh && r.bottom > 0;
+        contactGroup.visible = contactInView;
+        if (contactInView) {
+          contactModel.rotation.y += dt * 0.25;
+          contactModel.rotation.x += dt * 0.04;
+          contactModel.rotation.z += dt * 0.02;
+        }
       }
 
-      const anyLive = heroOp > 0.01 || aboutModel || contactModel;
+      const anyLive = (heroOp > 0.01 && heroModel) || aboutInView || contactInView;
       if (anyLive !== !hidden) {
         hidden = !anyLive;
         canvas.classList.toggle('is-live', anyLive);
