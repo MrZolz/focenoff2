@@ -15,6 +15,12 @@
   "hero": {
     "modelFile": "media/iPhone 17 Pro.glb"
   },
+  "about": {
+    "modelFile": ""
+  },
+  "contact": {
+    "modelFile": ""
+  },
   "links": {
     "telegramDM": "https://t.me/MAKC_CBAPKA",
     "telegramChannel": "https://t.me/focenoff",

@@ -332,6 +332,12 @@ function tabContact() {
         ${field('CTA — строка 2', 'texts.contactCtaLine2')}
       </div>
       <p class="field__hint">Ссылка кнопки берётся из вкладки «Ссылки» → Telegram DM.</p>
+    </div></div>
+    <div class="card"><div class="stack">
+      <div class="field__label">3D-модель справа от CTA (.glb / .gltf)</div>
+      <p class="field__hint" style="margin-top:-4px">Появляется при скролле к секции «Контакт» и плавно вращается. Если не загружена — секция без 3D.</p>
+      ${uploadZone('contact.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
+      ${getPath(content, 'contact.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="contact.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>`;
 }
 
@@ -341,6 +347,12 @@ function tabAbout() {
     `<div class="card"><div class="stack">
       ${field('Текст', 'texts.statementText', { area: true, rows: 4, hint: 'Оберните слово в *звёздочки*, чтобы выделить акцентом: *2M+*' })}
       ${field('Подпись кнопки', 'texts.statementCta')}
+    </div></div>
+    <div class="card"><div class="stack">
+      <div class="field__label">3D-модель слева от текста (.glb / .gltf)</div>
+      <p class="field__hint" style="margin-top:-4px">Появляется при скролле к секции «О себе» и плавно вращается. Если не загружена — секция без 3D.</p>
+      ${uploadZone('about.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
+      ${getPath(content, 'about.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="about.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>`;
 }
 
