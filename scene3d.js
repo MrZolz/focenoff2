@@ -167,11 +167,11 @@ import * as THREE from './vendor/three.module.js';
   /* ============================================================
      SLOTS — both centred, floating behind their sections
   ============================================================ */
-  createSlot('aboutCanvas', 'statement',
+  createSlot('aboutCanvas', 'modelAboutSpot',
     (c) => c && c.about && c.about.modelFile,
     0, 0);
 
-  createSlot('contactCanvas', 'contact',
+  createSlot('contactCanvas', 'modelContactSpot',
     (c) => c && c.contact && c.contact.modelFile,
     0, 0);
 

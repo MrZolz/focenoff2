@@ -83,6 +83,7 @@ iframe { border: none; display: block; }
 .marquee,
 .works,
 .statement,
+.model-spot,
 .contact-cta,
 .footer { position: relative; z-index: var(--content-z); }
 
@@ -1071,6 +1072,25 @@ body::after {
   align-items: center;
 }
 .contact-cta__socials a:hover { color: var(--white); }
+
+/* ============================================================
+   3D MODEL SPOTS — sections with space for the .glb models
+============================================================ */
+.model-spot {
+  position: relative;
+  height: 70vh;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.model-spot .section__index {
+  position: absolute;
+  bottom: clamp(20px, 4vh, 48px);
+  right: clamp(20px, 5vw, 72px);
+  color: var(--muted-2);
+}
 
 /* ============================================================
    FOOTER
