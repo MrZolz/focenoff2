@@ -165,16 +165,14 @@ import * as THREE from './vendor/three.module.js';
   }
 
   /* ============================================================
-     SLOTS
-     About model — on the left side near the statement text
-     Contact model — on the right side near the CTA
+     SLOTS — both centred, floating behind their sections
   ============================================================ */
   createSlot('aboutCanvas', 'statement',
     (c) => c && c.about && c.about.modelFile,
-    isMobile ? 0 : -1.6, isMobile ? 0.3 : 0);
+    0, 0);
 
   createSlot('contactCanvas', 'contact',
     (c) => c && c.contact && c.contact.modelFile,
-    isMobile ? 0 : 1.8, isMobile ? 0.2 : -0.1);
+    0, 0);
 
 })();
