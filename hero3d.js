@@ -187,12 +187,12 @@ import * as THREE from './vendor/three.module.js';
           heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.35, 0.06);
           heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.12, 0.06);
           // park on the right so the left-aligned hero type stays clear
-          const parkX = isMobile ? 0.55 : 1.7;
-          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 1.0 + pvx * 2.0, 0.06);
+          const parkX = isMobile ? 0.65 : 2.2;
+          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.7 + pvx * 1.4 + hp * 0.9, 0.06);
           heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.6 : 0.15) - ppy * 0.65 - pvy * 1.4, 0.06);
-          // scale up + push back as you scroll down — model grows larger
+          // scale up + push right + back as you scroll down — model grows larger
           const s  = lerp(isMobile ? 0.8 : 0.95, isMobile ? 1.25 : 1.55, hp);
-          const zOff = hp * 2.4;
+          const zOff = hp * 3.2;
           heroGroup.position.z = zOff;
           heroGroup.scale.setScalar(s);
           for (let i = 0; i < heroMats.length; i++) {
