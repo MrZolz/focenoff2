@@ -1,17 +1,15 @@
 /* ============================================================
    FOCENOFF — All 3D layers (Three.js)
-   • hero model: cursor-chase + scroll fade
+   • hero model: cursor-chase + scroll fade, right-aligned
    • about model: centred, Y-spin, always visible
    • contact model: centred, Y-spin, always visible
-=============================================================
-   */
-
+============================================================ */
 import * as THREE from './vendor/three.module.js';
 
 (() => {
   'use strict';
 
-  /* ---------- capability gate -----------------------------------*/
+  /* ---------- capability gate ---------------------------------- */
   const finePointer  = matchMedia('(pointer: fine)').matches;
   const isMobile     = !finePointer || window.innerWidth < 768;
   const veryLowEnd   = (navigator.deviceMemory != null && navigator.deviceMemory < 0.5);
@@ -44,7 +42,7 @@ import * as THREE from './vendor/three.module.js';
 
   console.log('[hero3d] scene initializing…');
 
-  /* ---------- small utils ---------------------------------------*/
+  /* ---------- small utils -------------------------------------- */
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const lerp  = (a, b, t) => a + (b - a) * t;
   const toSrc = (f) => f.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
@@ -64,7 +62,7 @@ import * as THREE from './vendor/three.module.js';
           const box = new THREE.Box3().setFromObject(obj);
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z) || 1;
-          const targetScale = label === 'hero' ? 3.2 : 2.7;
+          const targetScale = label === 'hero' ? 3.2 : 2.8;
           obj.scale.setScalar(targetScale / maxDim);
           box.setFromObject(obj);
           obj.position.sub(box.getCenter(new THREE.Vector3()));
@@ -76,9 +74,9 @@ import * as THREE from './vendor/three.module.js';
               matsArr.push(m);
             });
           });
-          const amb = new THREE.AmbientLight(0xffffff, 1.1);
-          const key = new THREE.DirectionalLight(0xffffff, 1.5);
-          key.position.set(2, 3, 5);
+          const amb = new THREE.AmbientLight(0xffffff, 1.15);
+          const key = new THREE.DirectionalLight(0xffffff, 1.6);
+          key.position.set(2.5, 3, 4);
           group.add(amb, key, obj);
           group.visible = true;
           canvas.classList.add('is-live');
@@ -177,7 +175,7 @@ import * as THREE from './vendor/three.module.js';
       camera.lookAt(-ppx * 1.7 * par + autoX * 0.5, ppy * 1.25 * par + autoY * 0.5, -5);
       camera.rotation.z = -ppx * 0.05;
 
-      /* ---- hero model — behind the title text ---- */
+      /* ---- hero model — behind the title text, right-aligned, fades on scroll ---- */
       const heroOp = clamp(1 - hp * 1.15, 0, 1);
       if (heroModel) {
         heroGroup.visible = heroOp > 0.01;
@@ -186,7 +184,7 @@ import * as THREE from './vendor/three.module.js';
           heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.25, 0.05);
           heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.08, 0.05);
           const parkX = isMobile ? 0 : 0;
-          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5 + 1.0 + hp * 0.4, 0.05);
+          heroGroup.position.x = lerp(heroGroup.position.x, 1.8 + parkX + ppx * 0.5 + pvx * 1.0 + hp * 0.4, 0.05);
           heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3 - pvy * 0.6, 0.05);
           const s  = lerp(isMobile ? 0.8 : 0.9, isMobile ? 1.1 : 1.3, hp);
           heroGroup.position.z = hp * 2.5;
@@ -197,7 +195,7 @@ import * as THREE from './vendor/three.module.js';
         }
       }
 
-      /* ---- about model — visible only when its section is on screen ---- */
+      /* ---- about model — visible only when its section is on screen, Y-spin only ---- */
       const aboutSpot = document.getElementById('modelAboutSpot');
       let aboutInView = false;
       if (aboutSpot && aboutModel) {
@@ -209,7 +207,7 @@ import * as THREE from './vendor/three.module.js';
         }
       }
 
-      /* ---- contact model — visible only when its section is on screen ---- */
+      /* ---- contact model — visible only when its section is on screen, Y-spin only ---- */
       const contactSpot = document.getElementById('modelContactSpot');
       let contactInView = false;
       if (contactSpot && contactModel) {
