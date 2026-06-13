@@ -1,15 +1,14 @@
-/* ==================================================================================================================
+/* ========================================================
    FOCENOFF — All 3D layers (Three.js)
-   • hero model: cursor-chase + scroll fade, positioned to the right
-   ₂ about model: centred, Y-spin, fixed above statement section
-   • contact model: centred, Y-spin, always visible
-========================================================================= */
+   → hero model: separate dynamic scene, cursor-chase + scroll fade, pushed right
+   → about model: separate static scene, fixed camera, Y-spin only
+   → contact model: separate static scene, fixed camera, Y-spin only
+======================================================== */
 import * as THREE from './vendor/three.module.js';
 
 (() => {
   'use strict';
 
-  /* ----------- capability gate ------------------------- */
   const finePointer  = matchMedia('(pointer: fine)').matches;
   const isMobile     = !finePointer || window.innerWidth < 768;
   const veryLowEnd   = (navigator.deviceMemory != null && navigator.deviceMemory < 0.5);
@@ -42,7 +41,6 @@ import * as THREE from './vendor/three.module.js';
 
   console.log('[hero3d] scene initializing...');
 
-  /* ----------- small utils ------------------------------ */
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const lerp  = (a, b, t) => a + (b - a) * t;
   const toSrc = (f) => f.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
@@ -86,7 +84,7 @@ import * as THREE from './vendor/three.module.js';
         undefined,
         (err) => console.warn('[hero3d]', label, 'load error ->', err)
       ))
-      .catch((err) => console.warn('[hero3d] GLTFLOader unavailable ->', err));
+      .catch((err) => console.warn('[hero3d] GLTFLoader unavailable ->', err));
   }
 
   function init() {
@@ -95,22 +93,28 @@ import * as THREE from './vendor/three.module.js';
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 
-    const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 200);
-    camera.position.set(0, 0, 7);
+    /* ---- HERO SCENE (dynamic camera) ---- */
+    const heroScene  = new THREE.Scene();
+    const heroCamera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 200);
+    heroCamera.position.set(0, 0, 7);
 
-    /* ---- HERO ---- */
     const heroGroup = new THREE.Group();
     heroGroup.visible = false;
-    scene.add(heroGroup);
+    heroScene.add(heroGroup);
     let heroModel = null;
     const heroMats = [];
+
+    /* ---- STATIC SCENE (fixed camera for about + contact) ---- */
+    const staticScene  = new THREE.Scene();
+    const staticCamera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 200);
+    staticCamera.position.set(0, 0, 7);
+    staticCamera.lookAt(0, 0, -5);
 
     /* ---- ABOUT ---- */
     const aboutGroup = new THREE.Group();
     aboutGroup.visible = false;
     aboutGroup.position.set(0, 0.8, -4);
-    scene.add(aboutGroup);
+    staticScene.add(aboutGroup);
     let aboutModel = null;
     const aboutMats = [];
 
@@ -118,7 +122,7 @@ import * as THREE from './vendor/three.module.js';
     const contactGroup = new THREE.Group();
     contactGroup.visible = false;
     contactGroup.position.set(0, 0, -20);
-    scene.add(contactGroup);
+    staticScene.add(contactGroup);
     let contactModel = null;
     const contactMats = [];
 
@@ -131,18 +135,18 @@ import * as THREE from './vendor/three.module.js';
     if (window.FOCENOFF_CONTENT) loadAll(window.FOCENOFF_CONTENT);
     else window.addEventListener('focenoff:content', (e) => loadAll(e.detail), { once: true });
 
-    /* ----- POINTER ----- */
+    /* ---- POINTER (hero only) ---- */
     const pointer = { x: 0, y: 0, vx: 0, vy: 0 };
     window.addEventListener('pointermove', (e) => {
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
       pointer.vx = nx - pointer.x;
-      pointer.vy = ny - pointer.y;
+      pointer.vy = ny - poii�er.y;
       pointer.x = nx;
       pointer.y = ny;
     }, { passive: true });
 
-    /* ----- RENDER LOOP ----- */
+    /* ---- RENDER LOOP ---- */
     const worksEl = document.getElementById('works');
     const statementEl = document.getElementById('statement');
     let ppx = 0, ppy = 0, pvx = 0, pvy = 0;
@@ -158,25 +162,25 @@ import * as THREE from './vendor/three.module.js';
       const worksTop = worksEl ? worksEl.offsetTop : vh;
       const hp = clamp(scrollY / Math.max(1, worksTop), 0, 1);
 
-      // smoothed pointer
+      // smoothed pointer (hero camera only)
       ppx += (pointer.x - ppx) * 0.065;
       ppy += (pointer.y - ppy) * 0.065;
       pvx += (pointer.vx - pvx) * 0.12; pointer.vx *= 0.82;
       pvy += (pointer.vy - pvy) * 0.12; pointer.vy *= 0.82;
 
-      // camera
+      // hero camera follows pointer
       const par   = isMobile ? 0.5 : 1.0;
       const autoX = isMobile ? Math.sin(t * 0.22) * 0.55 : 0;
       const autoY = isMobile ? Math.cos(t * 0.18) * 0.32 : 0;
-      camera.position.set(
+      heroCamera.position.set(
         (ppx * 2.6 + pvx * 7.0) * par + autoX,
         (-ppy * 1.8 - pvy * 5.0) * par + autoY,
         7
       );
-      camera.lookAt(-ppx * 1.7 * par + autoX * 0.5, ppy * 1.25 * par + autoY * 0.5, -5);
-      camera.rotation.z = -ppx * 0.05;
+      heroCamera.lookAt(-ppx * 1.7 * par + autoX * 0.5, ppy * 1.25 * par + autoY * 0.5, -5);
+      heroCamera.rotation.z = -ppx * 0.05;
 
-      /* ---- hero model - behind title text, right-aligned ---- */
+      /* ---- hero model - right of title text ---- */
       const heroOp = clamp(1 - hp * 1.15, 0, 1);
       if (heroModel) {
         heroGroup.visible = heroOp > 0.01;
@@ -184,7 +188,7 @@ import * as THREE from './vendor/three.module.js';
           heroModel.rotation.y += dt * 0.22 + pvx * 0.3;
           heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.25, 0.05);
           heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.08, 0.05);
-          const parkX = isMobile ? 1.0 : 2.2;
+          const parkX = isMobile ? 1.8 : 4.5;
           heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5 + pvx * 1.0 + hp * 0.4, 0.05);
           heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3 - pvy * 0.6, 0.05);
           const s  = lerp(isMobile ? 0.8 : 0.9, isMobile ? 1.1 : 1.3, hp);
@@ -196,7 +200,7 @@ import * as THREE from './vendor/three.module.js';
         }
       }
 
-      /* ---- about model - fixed over statement section ---- */
+      /* ---- about model - static scene, Y-spin only, no scroll/pointer motion ---- */
       let aboutInView = false;
       if (statementEl && aboutModel) {
         const r = statementEl.getBoundingClientRect();
@@ -204,12 +208,10 @@ import * as THREE from './vendor/three.module.js';
         aboutGroup.visible = aboutInView;
         if (aboutInView) {
           aboutModel.rotation.y += dt * 0.25;
-          aboutModel.rotation.x += dt * 0.04;
-          aboutModel.rotation.z += dt * 0.02;
         }
       }
 
-      /* ---- contact model ---- */
+      /* ---- contact model - static scene, Y-spin only ---- */
       const contactSpot = document.getElementById('modelContactSpot');
       let contactInView = false;
       if (contactSpot && contactModel) {
@@ -218,8 +220,6 @@ import * as THREE from './vendor/three.module.js';
         contactGroup.visible = contactInView;
         if (contactInView) {
           contactModel.rotation.y += dt * 0.25;
-          contactModel.rotation.x += dt * 0.04;
-          contactModel.rotation.z += dt * 0.02;
         }
       }
 
@@ -229,11 +229,25 @@ import * as THREE from './vendor/three.module.js';
         canvas.classList.toggle('is-live', anyLive);
       }
 
-      if (anyLive && !document.hidden) renderer.render(scene, camera);
+      if (anyLive && !document.hidden) {
+        const heroLive = heroOp > 0.01 && heroModel;
+        const staticLive = aboutInView || contactInView;
+
+        if (heroLive && staticLive) {
+          renderer.render(heroScene, heroCamera);
+          renderer.autoClear = false;
+          renderer.render(staticScene, staticCamera);
+          renderer.autoClear = true;
+        } else if (heroLive) {
+          renderer.render(heroScene, heroCamera);
+        } else if (staticLive) {
+          renderer.render(staticScene, staticCamera);
+        }
+      }
       requestAnimationFrame(frame);
     }
 
-    /* ----- resize ----- */
+    /* ---- resize ---- */
     let resizeTmr;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTmr);
@@ -241,8 +255,10 @@ import * as THREE from './vendor/three.module.js';
         const w = window.innerWidth, h = window.innerHeight;
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.6 : 2));
         renderer.setSize(w, h, false);
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
+        heroCamera.aspect = w / h;
+        heroCamera.updateProjectionMatrix();
+        staticCamera.aspect = w / h;
+        staticCamera.updateProjectionMatrix();
       }, 160);
     });
 
