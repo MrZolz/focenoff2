@@ -180,9 +180,10 @@ import * as THREE from './vendor/three.module.js';
       }
 
       /* ABOUT — fixed position, Y-spin only */
+      const aboutSpot = document.getElementById('modelAboutSpot');
       let aboutInView = false;
-      if (statementEl && aboutModel) {
-        const r = statementEl.getBoundingClientRect();
+      if (aboutSpot && aboutModel) {
+        const r = aboutSpot.getBoundingClientRect();
         aboutInView = r.top < vh + 150 && r.bottom > -150;
         aboutGroup.visible = aboutInView;
         if (aboutInView) {
