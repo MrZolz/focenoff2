@@ -77,7 +77,6 @@ import * as THREE from './vendor/three.module.js';
           key.position.set(2.5, 3, 4);
           group.add(amb, key, obj);
           group.visible = true;
-          canvas.classList.add('is-live');
           console.log('[hero3d]', label, 'loaded');
           if (onDone) onDone(obj);
         },
