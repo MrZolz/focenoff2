@@ -1,7 +1,7 @@
 /* ========================================================
    FOCENOFF — All 3D layers (Three.js)
    → hero: cursor-reactive group position, pushed right of title, scroll fade
-   → about: fixed position, Y-spin only (no scroll/cursor motion)
+   → about: fixed position, Y-spin + gentle X/Z rock
    → contact: fixed position, Y-spin only (no scroll/cursor motion)
    Camera is fixed at (0,0,7) — all pointer motion is on group transforms
 ======================================================== */
@@ -45,6 +45,7 @@ import * as THREE from './vendor/three.module.js';
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const lerp  = (a, b, t) => a + (b - a) * t;
   const toSrc = (f) => f.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
+
   try { init(); }
   catch (e) { console.warn('[hero3d] disabled ->', e); canvas.style.display = 'none'; }
 
@@ -77,6 +78,7 @@ import * as THREE from './vendor/three.module.js';
           key.position.set(2.5, 3, 4);
           group.add(amb, key, obj);
           group.visible = true;
+          canvas.classList.add('is-live');
           console.log('[hero3d]', label, 'loaded');
           if (onDone) onDone(obj);
         },
@@ -164,30 +166,34 @@ import * as THREE from './vendor/three.module.js';
       if (heroModel) {
         heroGroup.visible = heroOp > 0.01;
         if (heroGroup.visible) {
+          const t = clock.elapsedTime;
           heroModel.rotation.y += dt * 0.22 + pointer.vx * 0.3;
+          heroModel.rotation.x = Math.sin(t * 0.5) * 0.10;
+          heroModel.rotation.z = Math.cos(t * 0.4) * 0.07;
           heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.25, 0.05);
           heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.08, 0.05);
           const parkX = isMobile ? 1.8 : 4.5;
-          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5 + hp * 0.4, 0.05);
+          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5, 0.05);
           heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3, 0.05);
-          const s  = lerp(isMobile ? 0.8 : 0.9, isMobile ? 1.1 : 1.3, hp);
-          heroGroup.position.z = hp * 2.5;
-          heroGroup.scale.setScalar(s);
+          heroGroup.position.z = 0;
+          heroGroup.scale.setScalar(isMobile ? 0.9 : 1.0);
           for (let i = 0; i < heroMats.length; i++) {
             heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
           }
         }
       }
 
-      /* ABOUT — fixed position, Y-spin only */
-      const aboutSpot = document.getElementById('modelAboutSpot');
+      /* ABOUT — fixed position, Y-spin + gentle X/Z rock */
       let aboutInView = false;
-      if (aboutSpot && aboutModel) {
-        const r = aboutSpot.getBoundingClientRect();
+      if (statementEl && aboutModel) {
+        const r = statementEl.getBoundingClientRect();
         aboutInView = r.top < vh + 150 && r.bottom > -150;
         aboutGroup.visible = aboutInView;
         if (aboutInView) {
+          const t = clock.elapsedTime;
           aboutModel.rotation.y += dt * 0.25;
+          aboutModel.rotation.x = Math.sin(t * 0.5) * 0.12;
+          aboutModel.rotation.z = Math.cos(t * 0.4) * 0.08;
         }
       }
 
