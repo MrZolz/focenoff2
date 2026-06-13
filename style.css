@@ -5,36 +5,27 @@
    Single unified version — vertical editorial flow, no WebGL
 ============================================================ */
 :root {
-  --bg:        #f2f0ec;   /* warm off-white canvas              */
-  --surface:   #e9e6df;   /* slightly deeper warm panel         */
-  --surface-2: #ddd9d0;   /* deepest warm (statement)           */
-  --white:     #0c0b0a;   /* primary INK (named --white legacy) */
+  --bg:        #f2f0ec;
+  --surface:   #e9e6df;
+  --surface-2: #ddd9d0;
+  --white:     #0c0b0a;
   --ink:       #0c0b0a;
   --paper:     #f2f0ec;
   --muted:     rgba(12,11,10,0.50);
   --muted-2:   rgba(12,11,10,0.26);
   --border:    rgba(12,11,10,0.12);
   --border-2:  rgba(12,11,10,0.20);
-
-  /* light tokens for text that always sits over video/dark media */
   --on-media:      rgba(255,255,255,0.96);
   --on-media-soft: rgba(255,255,255,0.55);
-
   --f-display: 'AKONY', sans-serif;
   --f-sans:    'Inter', sans-serif;
-
   --header-h:  64px;
-
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out:  cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in:   cubic-bezier(0.7, 0, 0.84, 0);
-
-  --content-z: 2;  /* main content layer */
+  --content-z: 2;
 }
 
-/* ============================================================
-   FONT
-============================================================ */
 @font-face {
   font-family: 'AKONY';
   src: url('AKONY.otf') format('opentype'),
@@ -44,9 +35,6 @@
   font-display: swap;
 }
 
-/* ============================================================
-   RESET
-============================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
@@ -69,8 +57,6 @@ body {
 body.is-loading { overflow: hidden; }
 
 img, video, svg { display: block; max-width: 100%; }
-/* author-origin [hidden] must win over `svg{display:block}` above, otherwise
-   toggled icons (mute on/off) render both at once */
 [hidden] { display: none !important; }
 a  { color: inherit; text-decoration: none; }
 ul { list-style: none; }
@@ -84,19 +70,12 @@ iframe { border: none; display: block; }
 .works,
 .statement,
 .model-spot,
+.worked-with,
 .contact-cta,
 .footer { position: relative; z-index: var(--content-z); }
 
-/* Bug fix: hero must not create its own stacking context.
-   Without this, .hero-canvas (root z-index:3) is painted above all
-   children of .hero (root z-index:2), including .hero__content (z-index:4).
-   Setting z-index:auto on .hero lets .hero__content compete directly
-   in the root stacking context at z=4 > canvas z=3 — text always on top. */
 .hero { z-index: auto; }
 
-/* ============================================================
-   GRAIN OVERLAY (film grain — multiply on light paper)
-============================================================ */
 body::after {
   content: '';
   position: fixed;
@@ -125,9 +104,6 @@ body::after {
   100% { transform: translate(0%, 4%) }
 }
 
-/* ============================================================
-   PRELOADER
-============================================================ */
 .preloader {
   position: fixed;
   inset: 0;
@@ -159,8 +135,6 @@ body::after {
 
 .preloader__name {
   font-family: var(--f-display);
-  /* AKONY is extremely wide (≈11.8em for FOCENOFF incl. letter-spacing) —
-     cap the size so the name always fits narrow phones */
   font-size: min(clamp(2.8rem, 7vw, 6rem), calc((100vw - 48px) / 12));
   font-weight: normal;
   letter-spacing: 0.06em;
@@ -205,9 +179,6 @@ body::after {
   font-variant-numeric: tabular-nums;
 }
 
-/* ============================================================
-   CURSOR (desktop only)
-============================================================ */
 @media (pointer: fine) {
   * { cursor: none !important; }
 
@@ -218,13 +189,11 @@ body::after {
     pointer-events: none;
   }
 
-  /* black cursor — same dot + ring + label structure, ink on paper */
   .cursor__dot {
     position: absolute;
     width: 6px; height: 6px;
     border-radius: 50%;
     background: var(--ink);
-    /* hairline halo keeps the black dot readable over dark video frames */
     box-shadow: 0 0 0 1px rgba(255,255,255,0.28);
     transform: translate(-50%, -50%);
   }
@@ -263,7 +232,6 @@ body::after {
     border-color: var(--ink);
   }
 
-  /* hovering a play button — big reticle + WATCH label */
   .cursor--play .cursor__ring {
     width: 104px; height: 104px;
     background: rgba(12,11,10,0.06);
@@ -272,9 +240,6 @@ body::after {
   .cursor--play .cursor__label { opacity: 1; }
 }
 
-/* ============================================================
-   HEADER
-============================================================ */
 .header {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -302,7 +267,6 @@ body::after {
   width: 26px; height: 26px;
   border-radius: 50%;
   object-fit: cover;
-  /* no outline — identical look to the preloader avatar */
   mix-blend-mode: multiply;
 }
 
@@ -345,9 +309,6 @@ body::after {
   transform: translateY(-3.5px) rotate(-45deg);
 }
 
-/* ============================================================
-   MENU OVERLAY
-============================================================ */
 .menu-overlay {
   position: fixed;
   inset: 0;
@@ -394,7 +355,7 @@ body::after {
   line-height: 1;
   text-transform: uppercase;
   color: var(--white);
-  white-space: nowrap; /* one line — JS fitter shrinks it to the viewport */
+  white-space: nowrap;
 }
 
 .menu-socials {
@@ -429,9 +390,6 @@ body::after {
   transition-delay: calc(0.1s + var(--i, 0) * 0.07s);
 }
 
-/* ============================================================
-   HERO
-============================================================ */
 .hero-canvas {
   position: fixed;
   inset: 0;
@@ -491,7 +449,6 @@ body::after {
   gap: 0;
 }
 
-/* Each line wraps chars that slide up */
 .hero__line {
   display: block;
   font-family: var(--f-display);
@@ -508,11 +465,6 @@ body::after {
   color: transparent;
 }
 
-/* Char split animation wrappers.
-   The title line-height is 0.85 while AKONY glyphs reach 0.71em above the
-   baseline — without extra headroom overflow:hidden shaves the glyph tops.
-   padding-top + equal negative margin extends the clip window upward
-   without moving the glyph. */
 .char-wrap {
   display: inline-block;
   overflow: hidden;
@@ -525,7 +477,6 @@ body::after {
   display: inline-block;
 }
 
-/* Preserve outline stroke on char spans */
 .hero__line--outline .char {
   -webkit-text-stroke: 1px var(--white);
   color: transparent;
@@ -550,30 +501,65 @@ body::after {
   color: var(--muted);
   flex: 1 1 auto;
   min-width: 0;
-  max-width: 72%; /* never run under the SCROLL indicator on phones */
+  max-width: 60%;
 }
 
-.hero__scroll {
+.hero__cta-group {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-  font-size: 0.55rem;
-  letter-spacing: 0.28em;
-  font-weight: 500;
-  color: var(--muted);
-  text-transform: uppercase;
-  transition: color 0.2s;
+  align-items: center;
+  gap: clamp(10px, 2vw, 20px);
+  flex-shrink: 0;
 }
-.hero__scroll:hover { color: var(--white); }
 
-.hero__scroll-line {
-  display: block;
-  width: 1px;
-  height: 48px;
-  background: currentColor;
-  transform-origin: bottom;
-  animation: scrollPulse 2s ease-in-out infinite;
+.hero__view-work {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border: 1px solid var(--border-2);
+  font-size: clamp(0.52rem, 1vw, 0.64rem);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  min-height: 44px;
+  white-space: nowrap;
+  transition: border-color 0.2s, background 0.2s, gap 0.3s var(--ease-expo);
+  touch-action: manipulation;
+}
+.hero__view-work:hover {
+  border-color: var(--ink);
+  background: rgba(12,11,10,0.04);
+  gap: 15px;
+}
+.hero__view-work svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  transition: transform 0.3s var(--ease-expo);
+}
+.hero__view-work:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.hero__contact-btn {
+  font-size: clamp(0.52rem, 1vw, 0.64rem);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: color 0.2s, border-color 0.2s;
+  touch-action: manipulation;
+}
+.hero__contact-btn:hover {
+  color: var(--ink);
+  border-color: var(--border-2);
 }
 
 .hero__index {
@@ -588,14 +574,6 @@ body::after {
   z-index: 1;
 }
 
-@keyframes scrollPulse {
-  0%, 100% { transform: scaleY(1);   opacity: 0.45; }
-  50%       { transform: scaleY(0.3); opacity: 1;   }
-}
-
-/* ============================================================
-   MARQUEE
-============================================================ */
 .marquee {
   overflow: hidden;
   border-top:    1px solid var(--border);
@@ -607,7 +585,7 @@ body::after {
 .marquee__track {
   display: inline-flex;
   align-items: center;
-  animation: marqueeScroll 36s linear infinite;
+  /* animation driven by GSAP — see initMarqueeGSAP() in script.js */
   will-change: transform;
 }
 
@@ -625,14 +603,6 @@ body::after {
   font-size: 0.55rem;
 }
 
-@keyframes marqueeScroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-/* ============================================================
-   SECTION INDEX (shared corner numbers)
-============================================================ */
 .section__index {
   position: absolute;
   bottom: clamp(24px, 4vh, 44px);
@@ -644,9 +614,6 @@ body::after {
   color: var(--muted-2);
 }
 
-/* ============================================================
-   WORKS — vertical editorial flow (chapters + stacked items)
-============================================================ */
 .works {
   position: relative;
   padding: clamp(56px, 9vh, 110px) clamp(20px, 5vw, 72px) clamp(80px, 12vh, 150px);
@@ -661,7 +628,6 @@ body::after {
   gap: clamp(48px, 8vh, 96px);
 }
 
-/* Chapter header */
 .works__chapter { padding-top: clamp(20px, 4vh, 44px); }
 
 .works__chapter-header {
@@ -698,7 +664,6 @@ body::after {
   white-space: nowrap;
 }
 
-/* Work item — media + caption below (reference-style card) */
 .work-item {
   display: flex;
   flex-direction: column;
@@ -723,7 +688,6 @@ body::after {
 }
 .work-item:hover .work-item__thumb { transform: scale(1.04); }
 
-/* Play overlay */
 .work-item__play {
   position: absolute;
   inset: 0;
@@ -767,7 +731,6 @@ body::after {
   text-transform: uppercase;
 }
 
-/* Caption under the media */
 .work-item__caption {
   display: flex;
   align-items: flex-start;
@@ -819,7 +782,6 @@ body::after {
   padding-top: 2px;
 }
 
-/* laconic view counter (motion clips + long videos) */
 .work-item__stat {
   font-size: 0.64rem;
   font-weight: 500;
@@ -845,9 +807,6 @@ body::after {
 .work-item__yt-link:hover { border-color: var(--ink); }
 .work-item__yt-link[hidden] { display: none; }
 
-/* ============================================================
-   MOTION PLAYER — inline player (reference-style)
-============================================================ */
 .motion-player { cursor: pointer; }
 
 .motion-player__video {
@@ -859,14 +818,12 @@ body::after {
   z-index: 1;
 }
 
-/* play button stays visible until the clip is actually playing */
 .work-item--motion .motion-player__play { opacity: 1; }
 .work-item--motion.is-playing .motion-player__play {
   opacity: 0;
   pointer-events: none;
 }
 
-/* prev / next clip switches */
 .motion-nav {
   position: absolute;
   top: 50%;
@@ -890,7 +847,6 @@ body::after {
 .motion-nav--prev { left: clamp(12px, 2vw, 24px); }
 .motion-nav--next { right: clamp(12px, 2vw, 24px); }
 
-/* clip counter — 1/N */
 .motion-counter {
   position: absolute;
   top: clamp(12px, 2vw, 20px);
@@ -912,7 +868,6 @@ body::after {
   pointer-events: none;
 }
 
-/* sound — bound to the global FOCENOFF_SOUND state */
 .motion-mute {
   position: absolute;
   bottom: clamp(12px, 2vw, 20px);
@@ -934,7 +889,6 @@ body::after {
 .motion-mute svg { width: 15px; height: 15px; }
 .motion-mute:hover { background: rgba(0,0,0,0.7); color: #fff; transform: scale(1.1); }
 
-/* ── tablets / phones ── */
 @media (pointer: coarse) {
   .motion-nav  { width: 46px; height: 46px; }
   .motion-mute { width: 46px; height: 46px; }
@@ -954,9 +908,6 @@ body::after {
   }
 }
 
-/* ============================================================
-   STATEMENT — word reveal
-============================================================ */
 .statement {
   position: relative;
   padding: clamp(80px, 14vh, 160px) clamp(20px, 5vw, 72px);
@@ -977,10 +928,6 @@ body::after {
   margin-bottom: clamp(44px, 7vh, 80px);
 }
 
-/* Word reveal: each word wrapped in overflow-hidden span.
-   Default state is VISIBLE — the rise is applied by JS (gsap.set) only when
-   the reveal will actually run, so the copy never ships hidden if JS/ScrollTrigger
-   misfires (the works section injects a huge scroll spacer that can stale triggers). */
 .word {
   display: inline-block;
   overflow: hidden;
@@ -1014,9 +961,77 @@ body::after {
 }
 .statement__cta-arrow { font-size: 1.1em; }
 
-/* ============================================================
-   CONTACT CTA
-============================================================ */
+.worked-with {
+  position: relative;
+  z-index: var(--content-z);
+  padding: clamp(48px, 8vh, 88px) 0;
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.worked-with__label {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 clamp(20px, 5vw, 72px);
+  margin-bottom: clamp(28px, 4vh, 48px);
+}
+
+.worked-with__track-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.worked-with__track {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(36px, 5vw, 60px);
+  padding-inline: clamp(20px, 5vw, 72px);
+  will-change: transform;
+}
+
+.worked-with__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.worked-with__avatar {
+  width: clamp(52px, 6vw, 68px);
+  height: clamp(52px, 6vw, 68px);
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  filter: grayscale(0.2);
+  transition: filter 0.35s var(--ease-out), transform 0.35s var(--ease-out);
+  display: block;
+}
+.worked-with__item:hover .worked-with__avatar {
+  filter: grayscale(0);
+  transform: scale(1.07);
+}
+
+.worked-with__name {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.worked-with__subs {
+  font-size: 0.54rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
 .contact-cta {
   position: relative;
   padding: clamp(80px, 14vh, 160px) clamp(20px, 5vw, 72px);
@@ -1080,11 +1095,9 @@ body::after {
 }
 .contact-cta__socials a:hover { color: var(--white); }
 
-/* ============================================================
-   3D MODEL SPOTS — sections with space for the .glb models
-============================================================ */
 .model-spot {
   position: relative;
+  height: 50vh;
   min-height: 340px;
   display: flex;
   align-items: center;
@@ -1103,9 +1116,6 @@ body::after {
   color: var(--muted-2);
 }
 
-/* ============================================================
-   FOOTER
-============================================================ */
 .footer {
   border-top: 1px solid var(--border);
   padding: 24px clamp(20px, 5vw, 72px);
@@ -1148,9 +1158,6 @@ body::after {
 }
 .footer__contact:hover { color: var(--white); }
 
-/* ============================================================
-   VIDEO MODAL
-============================================================ */
 .v-modal {
   position: fixed;
   inset: 0;
@@ -1215,36 +1222,29 @@ body::after {
 .v-modal__ratio iframe[hidden],
 .v-modal__ratio video[hidden] { display: none; }
 
-/* ============================================================
-   GSAP CONTROL STATES
-============================================================ */
 body:not(.gsap-ready) [data-work],
 body:not(.gsap-ready) [data-work-chapter] {
   opacity: 0;
 }
 
-/* ============================================================
-   REDUCED MOTION
-============================================================ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
   body::after { animation: none !important; }
-  .marquee__track  { animation: none !important; }
-  .hero__scroll-line { animation: none !important; }
+  .marquee__track  { transform: none !important; }
+  .worked-with__track { transform: none !important; }
   [data-work], [data-work-chapter] { opacity: 1 !important; transform: none !important; }
   .word__inner { transform: none !important; }
   .char { transform: none !important; }
 }
 
-/* ============================================================
-   SMALL SCREENS — keep display type inside the viewport
-============================================================ */
 @media (max-width: 720px) {
   .contact-cta__link { font-size: clamp(1.7rem, 10.5vw, 2.6rem); }
   .contact-cta__socials { gap: 20px; flex-wrap: wrap; }
   .statement__text { font-size: clamp(1.35rem, 6.4vw, 1.9rem); }
   .footer__inner { flex-wrap: wrap; gap: 12px 20px; }
+  .hero__stat { max-width: 55%; }
+  .hero__cta-group { gap: 8px; }
 }
