@@ -1,7 +1,7 @@
 /* ========================================================
    FOCENOFF — All 3D layers (Three.js)
    → hero: cursor-reactive group position, pushed right of title, recedes into background on scroll
-   → about: fixed to #modelAboutSpot viewport, Y-spin + gentle X/Z rock
+   → about: anchored to #modelAboutSpot viewport position, no fade, Y-spin + gentle X/Z rock
    → contact: fixed position, Y-spin only
    Camera is fixed at (0,0,7) — all pointer motion is on group transforms
 ======================================================== */
@@ -109,7 +109,7 @@ import * as THREE from './vendor/three.module.js';
     /* ABOUT */
     const aboutGroup = new THREE.Group();
     aboutGroup.visible = false;
-    aboutGroup.position.set(0, 0.8, -4);
+    aboutGroup.position.set(0, 0, -4);
     scene.add(aboutGroup);
     let aboutModel = null;
     const aboutMats = [];
@@ -184,11 +184,26 @@ import * as THREE from './vendor/three.module.js';
         }
       }
 
-      /* ABOUT — visible when #modelAboutSpot is in viewport, fixed position, Y-spin + X/Z rock */
+      /* ABOUT — anchored to #modelAboutSpot center; no fade in/out; Y-spin + X/Z rock
+         Projects the section's screen-space centre into 3-D world coordinates so the
+         model stays visually fixed inside its HTML section as the page scrolls. */
       let aboutInView = false;
       if (aboutSpotEl && aboutModel) {
         const r = aboutSpotEl.getBoundingClientRect();
-        aboutInView = r.top < vh + 100 && r.bottom > -100;
+        aboutInView = r.top < vh && r.bottom > 0;
+
+        /* Track Y position: convert section centre to world Y at the model's depth.
+           Camera at (0,0,7) looking straight along -Z. Model depth z = -4.
+           camDist = 7 - (-4) = 11. tanHalfFov = tan(21 deg). */
+        const modelZ     = aboutGroup.position.z;           // -4, never changed
+        const camDist    = camera.position.z - modelZ;      // 11
+        const tanHalfFov = Math.tan(camera.fov * 0.5 * Math.PI / 180);
+        const worldHalfH = camDist * tanHalfFov;
+        const sectionCY  = (r.top + r.height * 0.5) / vh;  // 0 = vp top, 1 = vp bottom
+        const ndcY       = -(sectionCY * 2 - 1);            // NDC Y (-1 bottom to +1 top)
+        aboutGroup.position.x = 0;
+        aboutGroup.position.y = lerp(aboutGroup.position.y, ndcY * worldHalfH, 0.1);
+
         aboutGroup.visible = aboutInView;
         if (aboutInView) {
           aboutModel.rotation.y += dt * 0.25;
@@ -210,9 +225,12 @@ import * as THREE from './vendor/three.module.js';
       }
 
       const anyLive = (heroOp > 0.01 && heroModel) || aboutInView || contactInView;
-      if (anyLive !== !hidden) {
-        hidden = !anyLive;
-        canvas.classList.toggle('is-live', anyLive);
+      /* Once the canvas becomes live (first model appears), keep it live permanently.
+         This prevents the canvas from fading out and back in when the user scrolls
+         from the hero section through the works section to the about section. */
+      if (anyLive && hidden) {
+        hidden = false;
+        canvas.classList.add('is-live');
       }
 
       if (anyLive && !document.hidden) renderer.render(scene, camera);
