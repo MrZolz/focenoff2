@@ -143,7 +143,7 @@ import * as THREE from './vendor/three.module.js';
     }, { passive: true });
 
     /* RENDER LOOP */
-    const worksEl    = document.getElementById('works');
+    const worksEl     = document.getElementById('works');
     const aboutSpotEl = document.getElementById('modelAboutSpot');
     let ppx = 0, ppy = 0;
     let hidden = true;
@@ -172,7 +172,6 @@ import * as THREE from './vendor/three.module.js';
           heroModel.rotation.z = Math.cos(t * 0.4) * 0.07;
           heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.25, 0.05);
           heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.08, 0.05);
-          /* Shifted left compared to original (was 1.8 mobile / 4.5 desktop) */
           const parkX = isMobile ? 1.0 : 3.0;
           heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5, 0.05);
           heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3, 0.05);
@@ -182,28 +181,39 @@ import * as THREE from './vendor/three.module.js';
           for (let i = 0; i < heroMats.length; i++) {
             heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
           }
+        } else {
+          /* Bug fix: snap z and scale back to starting values while invisible.
+             Prevents the model from lingering at a large/close position during
+             further scrolling and ensures a correct entrance on scroll-back. */
+          heroGroup.position.z = lerp(heroGroup.position.z, 0, 0.15);
+          heroGroup.scale.setScalar(lerp(heroGroup.scale.x, isMobile ? 0.9 : 1.0, 0.15));
         }
       }
 
       /* ABOUT — anchored to #modelAboutSpot center; no fade in/out; Y-spin + X/Z rock
          Projects the section's screen-space centre into 3-D world coordinates so the
-         model stays visually fixed inside its HTML section as the page scrolls. */
+         model stays visually fixed inside its HTML section as the page scrolls.
+         Bug fix: always update position even off-screen; snap instantly when section
+         is far from viewport to prevent stuck-at-top/bottom after fast scrolling. */
       let aboutInView = false;
       if (aboutSpotEl && aboutModel) {
         const r = aboutSpotEl.getBoundingClientRect();
         aboutInView = r.top < vh && r.bottom > 0;
 
-        /* Track Y position: convert section centre to world Y at the model's depth.
-           Camera at (0,0,7) looking straight along -Z. Model depth z = -4.
-           camDist = 7 - (-4) = 11. tanHalfFov = tan(21 deg). */
-        const modelZ     = aboutGroup.position.z;           // -4, never changed
-        const camDist    = camera.position.z - modelZ;      // 11
+        const modelZ     = aboutGroup.position.z;
+        const camDist    = camera.position.z - modelZ;
         const tanHalfFov = Math.tan(camera.fov * 0.5 * Math.PI / 180);
         const worldHalfH = camDist * tanHalfFov;
-        const sectionCY  = (r.top + r.height * 0.5) / vh;  // 0 = vp top, 1 = vp bottom
-        const ndcY       = -(sectionCY * 2 - 1);            // NDC Y (-1 bottom to +1 top)
+        const sectionCY  = (r.top + r.height * 0.5) / vh;
+        const ndcY       = -(sectionCY * 2 - 1);
+        const targetY    = ndcY * worldHalfH;
+
+        /* Snap when section is >50% viewport away; smooth lerp when near/in view */
+        const distFromVp = r.top > vh ? r.top - vh : r.bottom < 0 ? -r.bottom : 0;
+        const lerpFactor = distFromVp > vh * 0.5 ? 1.0 : 0.1;
+
         aboutGroup.position.x = 0;
-        aboutGroup.position.y = lerp(aboutGroup.position.y, ndcY * worldHalfH, 0.1);
+        aboutGroup.position.y = lerp(aboutGroup.position.y, targetY, lerpFactor);
 
         aboutGroup.visible = aboutInView;
         if (aboutInView) {
@@ -226,9 +236,6 @@ import * as THREE from './vendor/three.module.js';
       }
 
       const anyLive = (heroOp > 0.01 && heroModel) || aboutInView || contactInView;
-      /* Once the canvas becomes live (first model appears), keep it live permanently.
-         This prevents the canvas from fading out and back in when the user scrolls
-         from the hero section through the works section to the about section. */
       if (anyLive && hidden) {
         hidden = false;
         canvas.classList.add('is-live');
