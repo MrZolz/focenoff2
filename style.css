@@ -87,6 +87,13 @@ iframe { border: none; display: block; }
 .contact-cta,
 .footer { position: relative; z-index: var(--content-z); }
 
+/* Bug fix: hero must not create its own stacking context.
+   Without this, .hero-canvas (root z-index:3) is painted above all
+   children of .hero (root z-index:2), including .hero__content (z-index:4).
+   Setting z-index:auto on .hero lets .hero__content compete directly
+   in the root stacking context at z=4 > canvas z=3 — text always on top. */
+.hero { z-index: auto; }
+
 /* ============================================================
    GRAIN OVERLAY (film grain — multiply on light paper)
 ============================================================ */
