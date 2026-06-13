@@ -82,11 +82,18 @@
       </h1>
     </div>
     <div class="hero__bottom">
-      <a href="#works" class="hero__scroll" aria-label="К работам">
-        <span class="hero__scroll-line"></span>
-        <span class="hero__scroll-label">SCROLL</span>
-      </a>
+      <span class="hero__stat">2M+ ПОДПИСЧИКОВ · YOUTUBE · REELS</span>
+      <div class="hero__cta-group">
+        <a href="#works" class="hero__view-work" aria-label="К работам">
+          <span>ПОСМОТРЕТЬ РАБОТЫ</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M5 19L19 5M19 5H8M19 5v11"/>
+          </svg>
+        </a>
+        <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" class="hero__contact-btn" target="_blank" rel="noopener noreferrer" aria-label="Написать в Telegram">CONTACT ME</a>
+      </div>
     </div>
+    <span class="hero__index" aria-hidden="true">01</span>
   </section>
 
   <!-- MARQUEE -->
@@ -96,7 +103,7 @@
 
   <main>
 
-    <!-- WORKS — chapters + stacked items, normal vertical page scroll -->
+    <!-- WORKS -->
     <section class="works" id="works">
       <div class="works__list" id="worksTrack"></div>
     </section>
@@ -104,6 +111,14 @@
     <!-- 3D MODEL — BEFORE ABOUT -->
     <section class="model-spot" id="modelAboutSpot">
       <span class="section__index" aria-hidden="true"></span>
+    </section>
+
+    <!-- WORKED WITH -->
+    <section class="worked-with" id="workedWith" aria-label="Worked With">
+      <p class="worked-with__label">Worked With:</p>
+      <div class="worked-with__track-wrap" aria-hidden="true">
+        <div class="worked-with__track" id="workedWithTrack"></div>
+      </div>
     </section>
 
     <!-- STATEMENT -->
@@ -117,20 +132,14 @@
           <span class="statement__cta-arrow" aria-hidden="true">→</span>
         </a>
       </div>
+      <span class="section__index" aria-hidden="true">03</span>
     </section>
 
     <!-- CONTACT CTA -->
     <section class="contact-cta" id="contact">
       <div class="contact-cta__inner">
         <p class="contact-cta__label">Готов к новым проектам</p>
-        <a
-          href="https://t.me/MAKC_CBAPKA"
-          data-link="telegramDM"
-          class="contact-cta__link"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Написать в Telegram"
-        >
+        <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" class="contact-cta__link" target="_blank" rel="noopener noreferrer" aria-label="Написать в Telegram">
           <span data-text="contactCtaLine1">НАПИСАТЬ</span>
           <span data-text="contactCtaLine2">В TELEGRAM</span>
           <span class="contact-cta__arrow" aria-hidden="true">↗</span>
@@ -141,6 +150,7 @@
           <a href="https://www.tiktok.com/@focenoff" data-link="tiktok" target="_blank" rel="noopener noreferrer">TikTok</a>
         </div>
       </div>
+      <span class="section__index" aria-hidden="true">04</span>
     </section>
 
     <!-- 3D MODEL — AFTER CONTACT -->
@@ -155,33 +165,25 @@
     <div class="footer__inner">
       <span class="footer__name" data-text="footerName">MAXIM FOCENOFF</span>
       <span class="footer__copy">Developed by <a href="https://github.com/mrzolz19" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: inherit; font-weight: 500;">MrZolz</a></span>
-      <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" class="footer__contact" target="_blank" rel="noopener noreferrer">
-        CONTACT →
-      </a>
+      <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" class="footer__contact" target="_blank" rel="noopener noreferrer">CONTACT →</a>
     </div>
   </footer>
 
   <!-- VIDEO MODAL -->
   <div class="v-modal" id="vModal" hidden role="dialog" aria-modal="true" aria-label="Видеоплеер">
     <button class="v-modal__close" id="vModalClose" aria-label="Закрыть видео">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M18 6L6 18M6 6l12 12"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
     <div class="v-modal__backdrop" id="vModalBackdrop"></div>
     <div class="v-modal__box">
       <div class="v-modal__ratio">
-        <iframe id="vModalIframe" src="" allowfullscreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          title="Видео"></iframe>
+        <iframe id="vModalIframe" src="" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title="Видео"></iframe>
         <video id="vModalVideo" controls playsinline preload="metadata" hidden></video>
       </div>
     </div>
   </div>
 
   <!-- TEMPLATES -->
-
-  <!-- Chapter header (between sections in the vertical flow) -->
   <template id="tplChapterCard">
     <div class="works__chapter" data-work-chapter>
       <div class="works__chapter-header">
@@ -192,16 +194,13 @@
     </div>
   </template>
 
-  <!-- Motion player — one inline player per motion section -->
   <template id="tplMotion">
     <article class="work-item work-item--motion" data-work>
       <div class="work-item__media motion-player">
         <img class="work-item__thumb motion-player__thumb" alt="Превью motion нарезки" loading="lazy" />
         <video class="motion-player__video" playsinline preload="metadata"></video>
         <button class="work-item__play motion-player__play" aria-label="Воспроизвести motion нарезку">
-          <span class="work-item__play-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          </span>
+          <span class="work-item__play-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
           <span class="work-item__play-label">PLAY</span>
         </button>
         <button class="motion-nav motion-nav--prev" aria-label="Предыдущая нарезка">
@@ -216,14 +215,8 @@
           <span class="motion-counter__total"></span>
         </div>
         <button class="motion-mute" aria-label="Включить звук" aria-pressed="false" hidden>
-          <svg class="mute-icon mute-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-            <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
-          </svg>
-          <svg class="mute-icon mute-icon--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" hidden>
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-          </svg>
+          <svg class="mute-icon mute-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          <svg class="mute-icon mute-icon--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" hidden><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
         </button>
       </div>
       <div class="work-item__caption">
@@ -240,15 +233,12 @@
     </article>
   </template>
 
-  <!-- YouTube card (videos section) -->
   <template id="tplVideoCard">
     <article class="work-item work-item--yt" data-work>
       <div class="work-item__media">
         <img class="work-item__thumb" loading="lazy" alt="" />
         <button class="work-item__play" aria-label="Смотреть видео">
-          <span class="work-item__play-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          </span>
+          <span class="work-item__play-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
           <span class="work-item__play-label">PLAY</span>
         </button>
       </div>
