@@ -1,1 +1,11 @@
-I need the full original file content to provide an accurate updated file. The guidelines specify two changes within the .hero-canvas block of style.css. Without the original file content, I cannot provide the complete updated file. I need the original file to proceed.
+.hero-canvas {
+position: fixed;
+inset: 0;
+width: 100%;
+height: 100%;
+z-index: 1;
+pointer-events: none;
+display: block;
+opacity: 0;
+transition: opacity 0.9s var(--ease-out);
+}
