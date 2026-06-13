@@ -1085,7 +1085,6 @@ body::after {
 ============================================================ */
 .model-spot {
   position: relative;
-  height: 50vh;
   min-height: 340px;
   display: flex;
   align-items: center;
