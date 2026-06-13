@@ -1,6 +1,6 @@
 /* ========================================================
    FOCENOFF — All 3D layers (Three.js)
-   → hero: cursor-reactive group position, pushed right of title, recedes into background on scroll
+   → hero: zooms toward camera + shifts slightly left on scroll, fades out
    → about: anchored to #modelAboutSpot viewport position, no fade, Y-spin + gentle X/Z rock
    → contact: fixed position, Y-spin only
    Camera is fixed at (0,0,7) — all pointer motion is on group transforms
@@ -162,7 +162,7 @@ import * as THREE from './vendor/three.module.js';
       ppx += (pointer.x - ppx) * 0.065;
       ppy += (pointer.y - ppy) * 0.065;
 
-      /* HERO — fades + recedes into background on scroll */
+      /* HERO — zooms toward camera and grows as user scrolls; shifts slightly left; fades out */
       const heroOp = clamp(1 - hp * 1.15, 0, 1);
       if (heroModel) {
         heroGroup.visible = heroOp > 0.01;
@@ -172,12 +172,13 @@ import * as THREE from './vendor/three.module.js';
           heroModel.rotation.z = Math.cos(t * 0.4) * 0.07;
           heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.25, 0.05);
           heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.08, 0.05);
-          const parkX = isMobile ? 1.8 : 4.5;
+          /* Shifted left compared to original (was 1.8 mobile / 4.5 desktop) */
+          const parkX = isMobile ? 1.0 : 3.0;
           heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5, 0.05);
           heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3, 0.05);
-          /* Recede into background: move away from camera (negative z) and shrink */
-          heroGroup.position.z = lerp(heroGroup.position.z, -hp * 2.5, 0.06);
-          heroGroup.scale.setScalar(lerp(isMobile ? 0.9 : 1.0, isMobile ? 0.45 : 0.5, hp));
+          /* Zoom toward camera: positive z (forward) + scale grows on scroll */
+          heroGroup.position.z = lerp(heroGroup.position.z, hp * 3.0, 0.06);
+          heroGroup.scale.setScalar(lerp(isMobile ? 0.9 : 1.0, isMobile ? 2.4 : 3.0, hp));
           for (let i = 0; i < heroMats.length; i++) {
             heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
           }
