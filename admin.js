@@ -145,6 +145,7 @@ function renderTab() {
   const map = {
     hero: tabHero, marquee: tabMarquee, menu: tabMenu, sections: tabSections,
     contact: tabContact, about: tabAbout, footer: tabFooter, links: tabLinks,
+    models: tabModels,
   };
   panelContent.innerHTML = (map[activeTab] || tabHero)();
 }
@@ -194,13 +195,6 @@ function tabHero() {
         ${field('Имя — строка 1', 'texts.heroTitleLine1')}
         ${field('Имя — строка 2', 'texts.heroTitleLine2')}
       </div>
-      ${field('Год / копирайт', 'texts.heroYear')}
-    </div></div>
-    <div class="card"><div class="stack">
-      <div class="field__label">3D-модель в hero (.glb / .gltf)</div>
-      <p class="field__hint" style="margin-top:-4px">Модель появится справа от заголовка вместо стандартной сцены: следует за курсором и растворяется при скролле. Если модель не загружена — hero остаётся без 3D-объекта.</p>
-      ${uploadZone('hero.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
-      ${getPath(content, 'hero.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="hero.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>`;
 }
 
@@ -276,7 +270,10 @@ function motionSectionUI(s, si) {
         ${field('Название', `${base}.title`)}
         ${field('Подпись (label)', `${base}.label`, { placeholder: 'Motion · YouTube' })}
       </div>
-      ${field('Ссылка на оригинал (YouTube)', `${base}.ytUrl`, { placeholder: 'https://www.youtube.com/watch?v=...' })}
+      <div class="grid-2">
+        ${field('Ссылка на оригинал (YouTube)', `${base}.ytUrl`, { placeholder: 'https://www.youtube.com/watch?v=...' })}
+        ${field('Просмотры', `${base}.views`, { placeholder: '*14* views', hint: '*текст* = акцент; пусто — счётчик скрыт' })}
+      </div>
     </div>`;
   }).join('');
   return `<div class="stack" style="margin-top:8px">
@@ -347,7 +344,6 @@ function tabFooter() {
   return tabHead('Подвал', 'Тексты внизу страницы') +
     `<div class="card"><div class="stack">
       ${field('Имя', 'texts.footerName')}
-      ${field('Копирайт', 'texts.footerCopy')}
       ${field('Подпись ссылки контакта', 'texts.footerContact')}
     </div></div>`;
 }
@@ -360,6 +356,29 @@ function tabLinks() {
       ${field('Telegram — канал', 'links.telegramChannel')}
       ${field('YouTube', 'links.youtube')}
       ${field('TikTok', 'links.tiktok')}
+    </div></div>`;
+}
+
+/* ---------- 3D MODELS ---------- */
+function tabModels() {
+  return tabHead('3D Модели', 'Загрузка .glb/.gltf моделей для разных секций сайта') +
+    `<div class="card"><div class="stack">
+      <div class="field__label">Hero — модель в шапке</div>
+      <p class="field__hint" style="margin-top:-4px">Справа от заголовка. Следует за курсором, увеличивается и уходит на задний план при скролле.</p>
+      ${uploadZone('hero.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
+      ${getPath(content, 'hero.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="hero.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
+    </div></div>
+    <div class="card"><div class="stack">
+      <div class="field__label">About — модель перед «О себе»</div>
+      <p class="field__hint" style="margin-top:-4px">По центру перед секцией. Появляется и плавно вращается при скролле к секции «О себе».</p>
+      ${uploadZone('about.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
+      ${getPath(content, 'about.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="about.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
+    </div></div>
+    <div class="card"><div class="stack">
+      <div class="field__label">Contact — модель после «Контакта»</div>
+      <p class="field__hint" style="margin-top:-4px">По центру после секции. Появляется и плавно вращается при скролле к секции «Контакт».</p>
+      ${uploadZone('contact.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
+      ${getPath(content, 'contact.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="contact.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>`;
 }
 
@@ -376,7 +395,7 @@ panelContent.addEventListener('input', (e) => {
    ДЕЙСТВИЯ (add / del / up / down / addsection)
 ============================================================ */
 function newItem(kind) {
-  if (kind === 'clip')  return { file: '', title: '', label: 'Motion · YouTube', ytUrl: '' };
+  if (kind === 'clip')  return { file: '', title: '', label: 'Motion · YouTube', ytUrl: '', views: '' };
   if (kind === 'video') return { thumbnail: '', videoId: '', name: '', nameUrl: '', type: '', stat: '' };
   return '';
 }

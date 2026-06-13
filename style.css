@@ -1099,6 +1099,8 @@ body::after {
   position: absolute;
   bottom: clamp(20px, 4vh, 48px);
   right: clamp(20px, 5vw, 72px);
+  z-index: 4;
+  pointer-events: none;
   color: var(--muted-2);
 }
 

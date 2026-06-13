@@ -1,22 +1,6 @@
 'use strict';
 
 /* ============================================================
-   SITE MODE — immersive (full) vs simple (lite)
-   The user can override auto-detection with the header toggle.
-   'auto' (default) → immersive wherever WebGL runs; 'lite' → DOM
-   version; 'full' → force immersive even with reduced-motion.
-   webgl.js reads window.FOCENOFF_MODE before booting the scene.
-============================================================ */
-window.FOCENOFF_MODE = (() => {
-  try {
-    const m = localStorage.getItem('focenoff_mode');
-    if (m === 'lite' || m === 'full') return m;
-  } catch (e) { /* storage unavailable → auto */ }
-  return 'auto';
-})();
-if (window.FOCENOFF_MODE === 'lite') document.documentElement.classList.add('mode-lite');
-
-/* ============================================================
    GLOBAL SOUND STATE — one switch for every video on the site.
    Both the WebGL HUD button and the DOM panel buttons drive it;
    all videos + all icons stay in sync.
@@ -75,19 +59,19 @@ const EMBEDDED_DEFAULTS = {
     {
       id: 'motion', type: 'motion', num: '02', title: 'MOTION',
       clips: [
-        { file: 'scammers.mp4',     title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is' },
-        { file: 'scammers (2).mp4', title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is' },
-        { file: 'scammers (3).mp4', title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is' },
-        { file: 'scammers (4).mp4', title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is' },
-        { file: 'scammers (5).mp4', title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is' },
-        { file: 'харчевников.mp4',  title: 'ХАРЧЕВНИКОВ',  label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=n75_-ntNL2I' },
+        { file: 'scammers.mp4',     title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is', views: '*14* views' },
+        { file: 'scammers (2).mp4', title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is', views: '*14* views' },
+        { file: 'scammers (3).mp4', title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is', views: '*14* views' },
+        { file: 'scammers (4).mp4', title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is', views: '*14* views' },
+        { file: 'scammers (5).mp4', title: 'SCAMMERS',     label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is', views: '*14* views' },
+        { file: 'харчевников.mp4',  title: 'ХАРЧЕВНИКОВ',  label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=n75_-ntNL2I', views: '*4* views' },
       ],
     },
     {
       id: 'long-videos', type: 'videos', num: '03', title: 'LONG VIDEOS',
       items: [
-        { thumbnail: 'media/zhbMghFRk_Q_maxres.jpg',   videoId: 'zhbMghFRk_Q', name: 'КЭШЗЛО',   type: 'УСТРОИЛСЯ РАБОТАТЬ В СКАМ ОФИС',                stat: '*350K* views' },
-        { thumbnail: 'media/1xpPfVB1R64_maxres.jpg',   videoId: '1xpPfVB1R64', name: 'КЭШЗЛО',   type: '30 ДНЕЙ ТОРЧАЛ НА САМЫХ ПОПУЛЯРНЫХ Н##КОТИКАХ', stat: '*540K* views' },
+        { thumbnail: 'media/zhbMghFRk_Q_maxres.jpg',   videoId: 'zhbMghFRk_Q', name: 'КЭШЗЛО',   type: 'УСТРОИЛСЯ РАБОТАТЬ В СКАМ ОФИС',                stat: '*357K* views' },
+        { thumbnail: 'media/1xpPfVB1R64_maxres.jpg',   videoId: '1xpPfVB1R64', name: 'КЭШЗЛО',   type: '30 ДНЕЙ ТОРЧАЛ НА САМЫХ ПОПУЛЯРНЫХ Н##КОТИКАХ', stat: '*543K* views' },
         { thumbnail: 'media/video09_thumbnail.jpg',
           videoId: '2KrKQPX0m5A', name: 'FOCENOFF', type: 'Я – МОНТАЖЕР SCAMMERS (не кликбейт)', stat: '*13K* views' },
       ],
@@ -118,11 +102,6 @@ function toPreviewSrc(filename) {
   return toSrc('media/previews/' + base + '.preview.mp4');
 }
 
-/* small screens / touch → play the 720p rendition even in the modal */
-function prefersLightVideo() {
-  return window.matchMedia('(max-width: 1023px), (pointer: coarse)').matches;
-}
-
 async function fetchContent() {
   // content.json is the single source of truth: the admin server rewrites it on
   // every save, so a relative static fetch works identically on the Express host
@@ -136,14 +115,13 @@ async function fetchContent() {
 
 async function loadContent() {
   CONTENT = await fetchContent();
+  window.FOCENOFF_CONTENT = CONTENT;
+  window.dispatchEvent(new CustomEvent('focenoff:content', { detail: CONTENT }));
   applyTexts();
   applyLinks();
   renderMarquee();
   renderMenu();
   renderWorks();
-  // share content with the WebGL layer (webgl.js builds the flying gallery)
-  window.FOCENOFF_CONTENT = CONTENT;
-  window.dispatchEvent(new CustomEvent('focenoff:content', { detail: CONTENT }));
 }
 
 function applyTexts() {
@@ -212,7 +190,7 @@ function renderWorks() {
   if (!container) return;
   const sections = (CONTENT && CONTENT.sections) || [];
   const tplChapter = document.getElementById('tplChapterCard');
-  const tplPanel   = document.getElementById('tplWorkPanel');
+  const tplMotion  = document.getElementById('tplMotion');
   const tplCard    = document.getElementById('tplVideoCard');
   container.innerHTML = '';
 
@@ -222,62 +200,153 @@ function renderWorks() {
     const clips = section.type === 'motion' ? (section.clips || []) : (section.items || []);
     const count = clips.length;
 
-    // Chapter title card
+    // Chapter header
     if (tplChapter) {
       const ch = tplChapter.content.firstElementChild.cloneNode(true);
-      ch.querySelector('.work-chapter__num').textContent  = section.num || '';
-      ch.querySelector('.work-chapter__title').textContent = section.title || '';
-      ch.querySelector('.work-chapter__count').textContent = count + ' PROJECT' + (count !== 1 ? 'S' : '');
+      ch.querySelector('.works__chapter-num').textContent   = section.num || '';
+      ch.querySelector('.works__chapter-title').textContent = section.title || '';
+      ch.querySelector('.works__chapter-count').textContent = count + ' PROJECT' + (count !== 1 ? 'S' : '');
       container.appendChild(ch);
     }
 
     if (section.type === 'motion') {
-      clips.forEach(clip => {
-        if (!tplPanel) return;
-        globalIdx++;
-        const node  = tplPanel.content.firstElementChild.cloneNode(true);
-        const video = node.querySelector('.work-panel__video');
-        const fullSrc = toSrc(clip.file);
-        video.dataset.fullSrc = fullSrc;
-        video.src = toPreviewSrc(clip.file);
-        video.addEventListener('error', () => {
-          if (video.dataset.fellBack) return;
-          video.dataset.fellBack = '1';
-          video.src = fullSrc; // no preview rendition → use the original
-        });
-        node.querySelector('.work-panel__num').textContent   = String(globalIdx).padStart(2, '0');
-        node.querySelector('.work-panel__title').textContent = clip.title || '';
-        node.querySelector('.work-panel__type').textContent  = clip.label || '';
-        const ytLink = node.querySelector('.work-panel__yt-link');
-        if (clip.ytUrl) ytLink.href = clip.ytUrl;
-        else ytLink.style.display = 'none';
-        container.appendChild(node);
-      });
+      // one inline player cycling through the section's clips
+      if (!tplMotion || !clips.length) return;
+      globalIdx++;
+      const node = tplMotion.content.firstElementChild.cloneNode(true);
+      node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
+      const thumb = node.querySelector('.motion-player__thumb');
+      if (section.thumbnail) thumb.src = section.thumbnail;
+      else thumb.hidden = true;
+      container.appendChild(node);
+      initMotionPlayer(node, clips);
     } else {
       clips.forEach(item => {
         if (!tplCard) return;
         globalIdx++;
         const node    = tplCard.content.firstElementChild.cloneNode(true);
-        const img     = node.querySelector('.work-panel__thumb');
+        const img     = node.querySelector('.work-item__thumb');
         img.src       = item.thumbnail || '';
         img.alt       = item.name || '';
-        const playBtn = node.querySelector('.work-panel__play-btn');
+        const playBtn = node.querySelector('.work-item__play');
         if (item.videoId) {
           playBtn.setAttribute('data-video-id', item.videoId);
           playBtn.setAttribute('aria-label', 'Смотреть — ' + (item.name || ''));
         }
-        node.querySelector('.work-panel__num').textContent   = String(globalIdx).padStart(2, '0');
-        node.querySelector('.work-panel__title').textContent = item.name || '';
-        node.querySelector('.work-panel__type').textContent  = item.type || '';
-        node.querySelector('.work-panel__stat').innerHTML    = fmtAccent(item.stat || '');
+        node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
+        const nameLink = node.querySelector('.work-item__name a');
+        nameLink.textContent = item.name || '';
+        if (item.nameUrl) nameLink.href = item.nameUrl;
+        else nameLink.removeAttribute('href');
+        node.querySelector('.work-item__type').textContent = item.type || '';
+        node.querySelector('.work-item__stat').innerHTML   = fmtAccent(item.stat || '');
         container.appendChild(node);
       });
     }
   });
+}
 
-  // Update counter max display
-  const counterEl = document.getElementById('worksCount');
-  if (counterEl) counterEl.textContent = '01';
+/* ============================================================
+   MOTION PLAYER — inline player with prev/next, counter, views
+============================================================ */
+function initMotionPlayer(root, clips) {
+  const video    = root.querySelector('.motion-player__video');
+  const thumb    = root.querySelector('.motion-player__thumb');
+  const playBtn  = root.querySelector('.motion-player__play');
+  const prevBtn  = root.querySelector('.motion-nav--prev');
+  const nextBtn  = root.querySelector('.motion-nav--next');
+  const curEl    = root.querySelector('.motion-counter__cur');
+  const totalEl  = root.querySelector('.motion-counter__total');
+  const muteBtn  = root.querySelector('.motion-mute');
+  const titleEl  = root.querySelector('.motion-title');
+  const typeEl   = root.querySelector('.motion-type');
+  const viewsEl  = root.querySelector('.motion-views');
+  const ytLink   = root.querySelector('.motion-yt-link');
+
+  let idx = 0;
+  let started = false;
+
+  totalEl.textContent = String(clips.length);
+
+  function setSrc(clip) {
+    const fullSrc = toSrc(clip.file);
+    delete video.dataset.fellBack;
+    video.dataset.fullSrc = fullSrc;
+    video.src = toPreviewSrc(clip.file); // 720p rendition; 'error' falls back to the original
+  }
+
+  video.addEventListener('error', () => {
+    if (video.dataset.fellBack) return;
+    video.dataset.fellBack = '1';
+    video.src = video.dataset.fullSrc; // no preview rendition → original file
+    if (started) video.play().catch(() => {});
+  });
+
+  function applyCaption(clip) {
+    titleEl.textContent = clip.title || '';
+    typeEl.textContent  = clip.label || '';
+    viewsEl.innerHTML   = fmtAccent(clip.views || '');
+    viewsEl.hidden      = !clip.views;
+    if (clip.ytUrl) { ytLink.href = clip.ytUrl; ytLink.hidden = false; }
+    else ytLink.hidden = true;
+  }
+
+  function load(i, autoplay) {
+    idx = (i + clips.length) % clips.length;
+    const clip = clips[idx];
+    curEl.textContent = String(idx + 1);
+    applyCaption(clip);
+    setSrc(clip);
+    if (autoplay) video.play().catch(() => {});
+  }
+
+  function start() {
+    if (started) {
+      video.paused ? video.play().catch(() => {}) : video.pause();
+      return;
+    }
+    started = true;
+    root.classList.add('is-playing');
+    thumb.hidden = true;
+    muteBtn.hidden = false;
+    video.play().catch(() => {});
+  }
+
+  playBtn.addEventListener('click', (e) => { e.stopPropagation(); start(); });
+  video.addEventListener('click', () => { if (started) video.paused ? video.play().catch(() => {}) : video.pause(); });
+  video.addEventListener('play',  () => root.classList.add('is-playing'));
+  video.addEventListener('pause', () => root.classList.remove('is-playing'));
+  video.addEventListener('ended', () => load(idx + 1, true));
+
+  prevBtn.addEventListener('click', (e) => { e.stopPropagation(); load(idx - 1, started); if (!started) start(); });
+  nextBtn.addEventListener('click', (e) => { e.stopPropagation(); load(idx + 1, started); if (!started) start(); });
+
+  // sound — bound to the global state (one switch for every video on the site)
+  const iconOff = muteBtn.querySelector('.mute-icon--off');
+  const iconOn  = muteBtn.querySelector('.mute-icon--on');
+  window.FOCENOFF_SOUND.subscribe((on) => {
+    video.muted = !on;
+    if (iconOff) iconOff.toggleAttribute('hidden', on);
+    if (iconOn)  iconOn.toggleAttribute('hidden', !on);
+    muteBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    muteBtn.setAttribute('aria-label', on ? 'Выключить звук' : 'Включить звук');
+  });
+  muteBtn.addEventListener('click', (e) => { e.stopPropagation(); window.FOCENOFF_SOUND.toggle(); });
+
+  // pause when the player scrolls out of view; resume when it returns
+  if (typeof IntersectionObserver !== 'undefined') {
+    let pausedByScroll = false;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!started) return;
+        if (!entry.isIntersecting && !video.paused) { video.pause(); pausedByScroll = true; }
+        else if (entry.isIntersecting && pausedByScroll) { video.play().catch(() => {}); pausedByScroll = false; }
+      });
+    }, { threshold: 0.25 });
+    io.observe(root);
+  }
+
+  load(0, false);
 }
 
 /* ============================================================
@@ -438,8 +507,8 @@ function fitDisplayText() {
   };
   fit(Array.from(document.querySelectorAll('.menu-nav__text')));
   fit(Array.from(document.querySelectorAll('.contact-cta__link span[data-text]')));
-  document.querySelectorAll('.work-chapter__title').forEach(el => fit([el]));
-  document.querySelectorAll('.work-panel__title').forEach(el => fit([el]));
+  document.querySelectorAll('.works__chapter-title').forEach(el => fit([el]));
+  document.querySelectorAll('.work-item__name').forEach(el => fit([el]));
 }
 
 function fitAllDisplayText() {
@@ -502,8 +571,8 @@ function initGSAP() {
     });
   }
 
-  // ── Works gallery — WebGL flies it (webgl.js); DOM is the fallback ──
-  if (!document.body.classList.contains('mode-webgl')) initDomWorks();
+  // ── Works — calm vertical reveal on scroll ──
+  initWorksReveal();
 
   // ── Statement word reveal ─────────────────────────────────
   initStatementReveal();
@@ -539,147 +608,34 @@ function revealOnView(el, fromVars, toVars) {
 }
 
 /* ============================================================
-   DOM WORKS — fallback gallery (no WebGL / touch / reduced-motion)
-   Also called by webgl.js if the 3D layer fails at runtime.
+   WORKS REVEAL — items fade up as they enter the viewport
 ============================================================ */
-let domWorksInited = false;
-function initDomWorks() {
-  if (domWorksInited) return;
-  domWorksInited = true;
+let worksRevealInited = false;
+function initWorksReveal() {
+  if (worksRevealInited) return;
+  worksRevealInited = true;
   if (typeof gsap === 'undefined') {
     initFallbackReveal();
-    initScrollVideos();
     return;
   }
   document.body.classList.add('gsap-ready');
   const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (window.innerWidth >= 1024 && !calm) {
-    initHorizontalWorks();        // desktop: cinematic horizontal scroll
+  const items = document.querySelectorAll('[data-work], [data-work-chapter]');
+  if (calm) {
+    gsap.set(items, { opacity: 1, y: 0 });
   } else {
-    document.body.classList.add('works-vertical'); // force column layout at any width
-    initVerticalWorksReveal();    // mobile / reduced-motion: calm vertical stack
-    initScrollVideos();
+    gsap.set(items, { opacity: 0, y: 40 });
+    items.forEach(el => {
+      gsap.to(el, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: 'expo.out',
+        scrollTrigger: { trigger: el, start: 'top 92%', once: true },
+      });
+    });
   }
   if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
-}
-window.initDomWorksFallback = initDomWorks;
-
-/* ============================================================
-   HORIZONTAL WORKS — GSAP pin + x movement
-============================================================ */
-/* ============================================================
-   PANEL SOUND — DOM gallery buttons bound to the global state
-============================================================ */
-function bindPanelSound(panel) {
-  const video   = panel.querySelector('video');
-  const muteBtn = panel.querySelector('.work-panel__mute');
-  if (!video || !muteBtn || muteBtn.dataset.soundBound) return;
-  muteBtn.dataset.soundBound = '1';
-  const iconOff = muteBtn.querySelector('.mute-icon--off');
-  const iconOn  = muteBtn.querySelector('.mute-icon--on');
-  window.FOCENOFF_SOUND.subscribe((on) => {
-    video.muted = !on;
-    if (iconOff) iconOff.hidden = on;
-    if (iconOn)  iconOn.hidden  = !on;
-    muteBtn.setAttribute('aria-label', on ? 'Выключить звук' : 'Включить звук');
-  });
-  muteBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    window.FOCENOFF_SOUND.toggle();
-  });
-}
-
-function initHorizontalWorks() {
-  const hz    = document.querySelector('.works-hz');
-  const track = document.getElementById('worksTrack');
-  if (!hz || !track) return;
-
-  const panels     = Array.from(track.children);
-  const workPanels = panels.filter(p => p.hasAttribute('data-work'));
-
-  if (!workPanels.length) return;
-
-  const getMove = () => -(track.scrollWidth - window.innerWidth);
-
-  gsap.to(track, {
-    x: getMove,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: hz,
-      start: 'top top',
-      end: () => `+=${track.scrollWidth - window.innerWidth}`,
-      pin: true,
-      scrub: 0.9,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-      onUpdate(self) {
-        // Progress bar
-        const bar = document.getElementById('worksBar');
-        if (bar) bar.style.transform = `scaleX(${self.progress})`;
-
-        // Panel counter
-        const totalPanels = workPanels.length;
-        const idx = Math.min(
-          Math.round(self.progress * totalPanels),
-          totalPanels
-        );
-        const counterEl = document.getElementById('worksCount');
-        if (counterEl) {
-          counterEl.textContent = String(Math.max(idx, 1)).padStart(2, '0');
-        }
-
-        // Video autoplay based on horizontal position
-        workPanels.forEach(panel => {
-          if (!panel.hasAttribute('data-work')) return;
-          const video = panel.querySelector('video');
-          if (!video) return;
-          const r = panel.getBoundingClientRect();
-          const panelCenter = r.left + r.width / 2;
-          const dist = Math.abs(panelCenter - window.innerWidth / 2);
-          if (dist < window.innerWidth * 0.55) {
-            video.play().catch(() => {});
-            const muteBtn = panel.querySelector('.work-panel__mute');
-            if (muteBtn) muteBtn.hidden = false;
-          } else {
-            video.pause();
-            const muteBtn = panel.querySelector('.work-panel__mute');
-            if (muteBtn) muteBtn.hidden = true;
-          }
-        });
-      },
-    },
-  });
-
-  // Video sound — bound to the global state (one switch for all videos)
-  workPanels.forEach(bindPanelSound);
-}
-
-/* ============================================================
-   VERTICAL WORKS REVEAL — mobile fallback
-============================================================ */
-function initVerticalWorksReveal() {
-  const panels = document.querySelectorAll('[data-work], [data-work-chapter]');
-  gsap.set(panels, { opacity: 0, y: 40 });
-  panels.forEach(el => {
-    gsap.to(el, {
-      opacity: 1,
-      y: 0,
-      duration: 1,
-      ease: 'expo.out',
-      scrollTrigger: { trigger: el, start: 'top 92%', once: true },
-    });
-  });
-
-  // Parallax on video panels
-  document.querySelectorAll('.work-panel:not(.work-panel--yt)').forEach(panel => {
-    const video = panel.querySelector('video');
-    if (!video) return;
-    gsap.to(video, {
-      yPercent: 9,
-      ease: 'none',
-      scrollTrigger: { trigger: panel, start: 'top bottom', end: 'bottom top', scrub: true },
-    });
-  });
 }
 
 /* ============================================================
@@ -761,33 +717,6 @@ function initStatementReveal() {
   } else {
     reveal();
   }
-}
-
-/* ============================================================
-   SCROLL-DRIVEN VIDEO AUTOPLAY (vertical / mobile)
-============================================================ */
-function initScrollVideos() {
-  const panels = document.querySelectorAll('.work-panel:not(.work-panel--yt)');
-  if (!panels.length) return;
-
-  panels.forEach(bindPanelSound);
-
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      const video   = entry.target.querySelector('video');
-      const muteBtn = entry.target.querySelector('.work-panel__mute');
-      if (!video) return;
-      if (entry.isIntersecting) {
-        video.play().catch(() => {});
-        if (muteBtn) muteBtn.hidden = false;
-      } else {
-        video.pause();
-        if (muteBtn) muteBtn.hidden = true;
-      }
-    });
-  }, { threshold: 0.45 });
-
-  panels.forEach(panel => observer.observe(panel));
 }
 
 /* ============================================================
@@ -881,21 +810,37 @@ function initCursor() {
   }
   requestAnimationFrame(animateCursor);
 
-  document.querySelectorAll('a, button').forEach(el => {
-    el.addEventListener('mouseenter', () => cursor.classList.add('cursor--hover'));
-    el.addEventListener('mouseleave', () => cursor.classList.remove('cursor--hover'));
-  });
-
-  document.querySelectorAll('.work-panel__play-btn[data-video-id]').forEach(el => {
-    el.addEventListener('mouseenter', () => {
+  // delegated — works for content rendered after load (works gallery)
+  document.addEventListener('mouseover', e => {
+    const playTarget = e.target.closest('.work-item__play');
+    if (playTarget) {
+      const fromPlay = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.work-item__play') : null;
+      if (fromPlay === playTarget) return;
       cursor.classList.remove('cursor--hover');
       cursor.classList.add('cursor--play');
       if (label) label.textContent = 'WATCH';
-    });
-    el.addEventListener('mouseleave', () => {
+    } else {
+      const hoverTarget = e.target.closest('a, button');
+      if (!hoverTarget) return;
+      const fromHover = e.relatedTarget instanceof Element ? e.relatedTarget.closest('a, button') : null;
+      if (fromHover === hoverTarget) return;
+      cursor.classList.add('cursor--hover');
+    }
+  });
+  document.addEventListener('mouseout', e => {
+    const playTarget = e.target.closest('.work-item__play');
+    if (playTarget) {
+      const toPlay = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.work-item__play') : null;
+      if (toPlay === playTarget) return;
       cursor.classList.remove('cursor--play');
       if (label) label.textContent = '';
-    });
+    } else {
+      const hoverTarget = e.target.closest('a, button');
+      if (!hoverTarget) return;
+      const toHover = e.relatedTarget instanceof Element ? e.relatedTarget.closest('a, button') : null;
+      if (toHover === hoverTarget) return;
+      cursor.classList.remove('cursor--hover');
+    }
   });
 }
 
@@ -914,7 +859,7 @@ function initVideoModal() {
   let pausedByModal = [];
   function pauseBackground() {
     pausedByModal = [];
-    document.querySelectorAll('.work-panel video').forEach(v => {
+    document.querySelectorAll('.motion-player__video').forEach(v => {
       if (!v.paused) { v.pause(); pausedByModal.push(v); }
     });
     document.dispatchEvent(new CustomEvent('focenoff:modal-open'));
@@ -946,26 +891,6 @@ function initVideoModal() {
     showModal();
   }
 
-  // motion clips play on-site from local mp4 — same modal, native <video>
-  function openLocalModal(src, fallbackSrc) {
-    if (!localVid || !src) return;
-    iframe.src = '';
-    iframe.hidden = true;
-    localVid.hidden = false;
-    localVid.onerror = (fallbackSrc && fallbackSrc !== src) ? () => {
-      localVid.onerror = null;
-      localVid.src = fallbackSrc;
-      const p2 = localVid.play();
-      if (p2 && p2.catch) p2.catch(() => {});
-    } : null;
-    localVid.src = src;
-    localVid.muted = false;
-    localVid.currentTime = 0;
-    showModal();
-    const pr = localVid.play();
-    if (pr && pr.catch) pr.catch(() => {}); // user can press play if autoplay is blocked
-  }
-
   function closeModal() {
     const box = modal.querySelector('.v-modal__box');
     const teardown = () => {
@@ -983,32 +908,19 @@ function initVideoModal() {
     }
   }
 
-  // expose for the WebGL gallery (click a plane → open modal)
   window.openVideoModal = openModal;
-  window.openLocalVideoModal = openLocalModal;
 
   document.addEventListener('click', e => {
-    const btn = e.target.closest('.work-panel__play-btn[data-video-id]');
+    const btn = e.target.closest('.work-item__play[data-video-id]');
     if (btn) {
       e.preventDefault();
       openModal(btn.dataset.videoId);
       return;
     }
-    // DOM gallery: clicking a motion panel (not its buttons/links) opens the clip on-site
-    const panel = e.target.closest('.work-panel:not(.work-panel--yt)');
-    if (panel && !e.target.closest('a, button')) {
-      const v = panel.querySelector('.work-panel__video');
-      if (!v) return;
-      const full    = v.dataset.fullSrc || v.currentSrc || v.src;
-      const preview = v.dataset.fellBack ? full : v.getAttribute('src');
-      // phones get the light 720p rendition in the modal too (4K stutters there)
-      if (prefersLightVideo() && preview && preview !== full) openLocalModal(preview, full);
-      else if (full) openLocalModal(full);
-    }
-    // failsafe: tapping anywhere on a YouTube panel (not a link) opens the player
-    const ytPanel = e.target.closest('.work-panel--yt');
-    if (ytPanel && !e.target.closest('a')) {
-      const pb = ytPanel.querySelector('.work-panel__play-btn[data-video-id]');
+    // failsafe: tapping anywhere on a YouTube card's media (not a link) opens the player
+    const media = e.target.closest('.work-item--yt .work-item__media');
+    if (media && !e.target.closest('a')) {
+      const pb = media.querySelector('.work-item__play[data-video-id]');
       if (pb) { e.preventDefault(); openModal(pb.dataset.videoId); }
     }
   });
@@ -1038,25 +950,6 @@ function initAnchorScroll() {
 /* ============================================================
    FALLBACK (no GSAP)
 ============================================================ */
-/* ============================================================
-   MODE TOGGLE — FULL (immersive) / LITE (simple) header switch
-============================================================ */
-function initModeToggle() {
-  const btn = document.getElementById('modeToggle');
-  if (!btn) return;
-  // what actually booted (webgl.js sets mode-webgl synchronously before DOMContentLoaded)
-  const active = document.body.classList.contains('mode-webgl') ? 'full' : 'lite';
-  btn.querySelectorAll('.header__mode-opt').forEach(el => {
-    el.classList.toggle('is-active', el.dataset.mode === active);
-  });
-  btn.addEventListener('click', () => {
-    const target = active === 'full' ? 'lite' : 'full';
-    try { localStorage.setItem('focenoff_mode', target); } catch (e) { /* ignore */ }
-    // full reload = clean teardown of the WebGL scene / GSAP triggers
-    window.location.reload();
-  });
-}
-
 function initFallbackReveal() {
   document.querySelectorAll('[data-work], [data-work-chapter]').forEach(el => {
     el.style.opacity = '1';
@@ -1088,7 +981,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCursor();
   initVideoModal();
   initAnchorScroll();
-  initModeToggle();
 
   // Fit hero title after fonts load (ensures chars measured with correct font metrics).
   // font-display:swap means fonts.ready can resolve while AKONY is still
@@ -1113,6 +1005,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, initDelay);
   } else {
     initFallbackReveal();
-    initScrollVideos();
   }
 });
