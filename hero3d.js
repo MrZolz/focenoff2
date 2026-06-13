@@ -1,8 +1,8 @@
 /* ========================================================
    FOCENOFF — All 3D layers (Three.js)
-   → hero: cursor-reactive group position, pushed right of title, scroll fade
-   → about: fixed position, Y-spin + gentle X/Z rock
-   → contact: fixed position, Y-spin only (no scroll/cursor motion)
+   → hero: cursor-reactive group position, pushed right of title, recedes into background on scroll
+   → about: fixed to #modelAboutSpot viewport, Y-spin + gentle X/Z rock
+   → contact: fixed position, Y-spin only
    Camera is fixed at (0,0,7) — all pointer motion is on group transforms
 ======================================================== */
 import * as THREE from './vendor/three.module.js';
@@ -143,14 +143,15 @@ import * as THREE from './vendor/three.module.js';
     }, { passive: true });
 
     /* RENDER LOOP */
-    const worksEl = document.getElementById('works');
-    const statementEl = document.getElementById('statement');
+    const worksEl    = document.getElementById('works');
+    const aboutSpotEl = document.getElementById('modelAboutSpot');
     let ppx = 0, ppy = 0;
     let hidden = true;
     const clock = new THREE.Clock();
 
     function frame() {
       const dt = Math.min(clock.getDelta(), 0.05);
+      const t  = clock.elapsedTime;
       const vh = window.innerHeight;
 
       const scrollY  = window.scrollY || (document.documentElement.scrollTop || 0);
@@ -161,12 +162,11 @@ import * as THREE from './vendor/three.module.js';
       ppx += (pointer.x - ppx) * 0.065;
       ppy += (pointer.y - ppy) * 0.065;
 
-      /* HERO — pushed right, cursor-reactive group transform, fade on scroll */
+      /* HERO — fades + recedes into background on scroll */
       const heroOp = clamp(1 - hp * 1.15, 0, 1);
       if (heroModel) {
         heroGroup.visible = heroOp > 0.01;
         if (heroGroup.visible) {
-          const t = clock.elapsedTime;
           heroModel.rotation.y += dt * 0.22 + pointer.vx * 0.3;
           heroModel.rotation.x = Math.sin(t * 0.5) * 0.10;
           heroModel.rotation.z = Math.cos(t * 0.4) * 0.07;
@@ -175,22 +175,22 @@ import * as THREE from './vendor/three.module.js';
           const parkX = isMobile ? 1.8 : 4.5;
           heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5, 0.05);
           heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3, 0.05);
-          heroGroup.position.z = 0;
-          heroGroup.scale.setScalar(isMobile ? 0.9 : 1.0);
+          /* Recede into background: move away from camera (negative z) and shrink */
+          heroGroup.position.z = lerp(heroGroup.position.z, -hp * 2.5, 0.06);
+          heroGroup.scale.setScalar(lerp(isMobile ? 0.9 : 1.0, isMobile ? 0.45 : 0.5, hp));
           for (let i = 0; i < heroMats.length; i++) {
             heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
           }
         }
       }
 
-      /* ABOUT — fixed position, Y-spin + gentle X/Z rock */
+      /* ABOUT — visible when #modelAboutSpot is in viewport, fixed position, Y-spin + X/Z rock */
       let aboutInView = false;
-      if (statementEl && aboutModel) {
-        const r = statementEl.getBoundingClientRect();
-        aboutInView = r.top < vh + 150 && r.bottom > -150;
+      if (aboutSpotEl && aboutModel) {
+        const r = aboutSpotEl.getBoundingClientRect();
+        aboutInView = r.top < vh + 100 && r.bottom > -100;
         aboutGroup.visible = aboutInView;
         if (aboutInView) {
-          const t = clock.elapsedTime;
           aboutModel.rotation.y += dt * 0.25;
           aboutModel.rotation.x = Math.sin(t * 0.5) * 0.12;
           aboutModel.rotation.z = Math.cos(t * 0.4) * 0.08;
