@@ -812,19 +812,33 @@ function initCursor() {
 
   // delegated — works for content rendered after load (works gallery)
   document.addEventListener('mouseover', e => {
-    if (e.target.closest('.work-item__play')) {
+    const playTarget = e.target.closest('.work-item__play');
+    if (playTarget) {
+      const fromPlay = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.work-item__play') : null;
+      if (fromPlay === playTarget) return;
       cursor.classList.remove('cursor--hover');
       cursor.classList.add('cursor--play');
       if (label) label.textContent = 'WATCH';
-    } else if (e.target.closest('a, button')) {
+    } else {
+      const hoverTarget = e.target.closest('a, button');
+      if (!hoverTarget) return;
+      const fromHover = e.relatedTarget instanceof Element ? e.relatedTarget.closest('a, button') : null;
+      if (fromHover === hoverTarget) return;
       cursor.classList.add('cursor--hover');
     }
   });
   document.addEventListener('mouseout', e => {
-    if (e.target.closest('.work-item__play')) {
+    const playTarget = e.target.closest('.work-item__play');
+    if (playTarget) {
+      const toPlay = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.work-item__play') : null;
+      if (toPlay === playTarget) return;
       cursor.classList.remove('cursor--play');
       if (label) label.textContent = '';
-    } else if (e.target.closest('a, button')) {
+    } else {
+      const hoverTarget = e.target.closest('a, button');
+      if (!hoverTarget) return;
+      const toHover = e.relatedTarget instanceof Element ? e.relatedTarget.closest('a, button') : null;
+      if (toHover === hoverTarget) return;
       cursor.classList.remove('cursor--hover');
     }
   });
