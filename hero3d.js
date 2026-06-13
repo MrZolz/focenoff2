@@ -1,251 +1,2 @@
-/* ============================================================
-   FOCENOFF â€” All 3D layers (Three.js)
-   â€¢ hero model: cursor-chase + scroll fade
-   â€¢ about model: centred, Y-spin, always visible
-   â€¢ contact model: centred, Y-spin, always visible
-============================================================ */
-import * as THREE from './vendor/three.module.js';
-
-(() => {
-  'use strict';
-
-  /* ---------- capability gate ---------------------------------- */
-  const finePointer  = matchMedia('(pointer: fine)').matches;
-  const isMobile     = !finePointer || window.innerWidth < 768;
-  const veryLowEnd   = (navigator.deviceMemory != null && navigator.deviceMemory < 0.5);
-
-  if (veryLowEnd) {
-    console.log('[hero3d] scene skipped: deviceMemory=' + navigator.deviceMemory);
-    return;
-  }
-
-  const canvas = document.getElementById('heroCanvas');
-  if (!canvas) return;
-
-  function makeRenderer() {
-    const tries = [
-      { canvas, antialias: true,  alpha: true },
-      { canvas, antialias: false, alpha: true },
-      { canvas, alpha: true, failIfMajorPerformanceCaveat: false },
-    ];
-    for (const opts of tries) {
-      try {
-        const r = new THREE.WebGLRenderer(opts);
-        if (r && r.getContext && r.getContext()) return r;
-      } catch (e) { /* try next */ }
-    }
-    return null;
-  }
-
-  const renderer = makeRenderer();
-  if (!renderer) { console.log('[hero3d] no WebGL context available'); return; }
-
-  console.log('[hero3d] scene initializingâ€¦');
-
-  /* ---------- small utils -------------------------------------- */
-  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const lerp  = (a, b, t) => a + (b - a) * t;
-  const toSrc = (f) => f.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
-
-  try { init(); }
-  catch (e) { console.warn('[hero3d] disabled â†’', e); canvas.style.display = 'none'; }
-
-  function loadOneModel(file, group, matsArr, label, onDone) {
-    if (!file) { console.log('[hero3d] no modelFile for', label); return; }
-    console.log('[hero3d] loading', label, ':', file);
-    import('./vendor/GLTFLoader.js')
-      .then(({ GLTFLoader }) => new GLTFLoader().load(
-        toSrc(file),
-        (gltf) => {
-          const obj = gltf.scene || (gltf.scenes && gltf.scenes[0]);
-          if (!obj) return;
-          const box = new THREE.Box3().setFromObject(obj);
-          const size = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z) || 1;
-          const targetScale = label === 'hero' ? 3.2 : 2.8;
-          obj.scale.setScalar(targetScale / maxDim);
-          box.setFromObject(obj);
-          obj.position.sub(box.getCenter(new THREE.Vector3()));
-          obj.traverse((n) => {
-            if (!n.isMesh || !n.material) return;
-            (Array.isArray(n.material) ? n.material : [n.material]).forEach((m) => {
-              m.transparent = true;
-              m.userData.baseOpacity = (m.opacity != null ? m.opacity : 1);
-              matsArr.push(m);
-            });
-          });
-          const amb = new THREE.AmbientLight(0xffffff, 1.15);
-          const key = new THREE.DirectionalLight(0xffffff, 1.6);
-          key.position.set(2.5, 3, 4);
-          group.add(amb, key, obj);
-          group.visible = true;
-          canvas.classList.add('is-live');
-          console.log('[hero3d]', label, 'loaded');
-          if (onDone) onDone(obj);
-        },
-        undefined,
-        (err) => console.warn('[hero3d]', label, 'load error â†’', err)
-      ))
-      .catch((err) => console.warn('[hero3d] GLTFLoader unavailable â†’', err));
-  }
-
-  function init() {
-    const DPR = Math.min(window.devicePixelRatio || 1, isMobile ? 1.6 : 2);
-    renderer.setPixelRatio(DPR);
-    renderer.setSize(window.innerWidth, window.innerHeight, false);
-    renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-
-    const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 200);
-    camera.position.set(0, 0, 7);
-
-    /* ---- HERO ---- */
-    const heroGroup = new THREE.Group();
-    heroGroup.visible = false;
-    scene.add(heroGroup);
-    let heroModel = null;
-    const heroMats = [];
-
-    /* ---- ABOUT ---- */
-    const aboutGroup = new THREE.Group();
-    aboutGroup.visible = false;
-    aboutGroup.position.set(0, 0, -10);
-    scene.add(aboutGroup);
-    let aboutModel = null;
-    const aboutMats = [];
-
-    /* ---- CONTACT ---- */
-    const contactGroup = new THREE.Group();
-    contactGroup.visible = false;
-    contactGroup.position.set(0, 0, -20);
-    scene.add(contactGroup);
-    let contactModel = null;
-    const contactMats = [];
-
-    function loadAll(content) {
-      loadOneModel(content && content.hero && content.hero.modelFile, heroGroup, heroMats, 'hero', (obj) => { heroModel = obj; });
-      loadOneModel(content && content.about && content.about.modelFile, aboutGroup, aboutMats, 'about', (obj) => { aboutModel = obj; });
-      loadOneModel(content && content.contact && content.contact.modelFile, contactGroup, contactMats, 'contact', (obj) => { contactModel = obj; });
-    }
-
-    if (window.FOCENOFF_CONTENT) loadAll(window.FOCENOFF_CONTENT);
-    else window.addEventListener('focenoff:content', (e) => loadAll(e.detail), { once: true });
-
-    /* ---- POINTER ---- */
-    const pointer = { x: 0, y: 0, vx: 0, vy: 0 };
-    window.addEventListener('pointermove', (e) => {
-      const nx = (e.clientX / window.innerWidth) * 2 - 1;
-      const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      pointer.vx = nx - pointer.x;
-      pointer.vy = ny - pointer.y;
-      pointer.x = nx;
-      pointer.y = ny;
-    }, { passive: true });
-
-    /* ---- RENDER LOOP ---- */
-    const worksEl = document.getElementById('works');
-    let ppx = 0, ppy = 0, pvx = 0, pvy = 0;
-    let hidden = true;
-    const clock = new THREE.Clock();
-
-    function frame() {
-      const dt = Math.min(clock.getDelta(), 0.05);
-      const t  = clock.elapsedTime;
-      const vh = window.innerHeight;
-
-      const scrollY  = window.scrollY || (document.documentElement.scrollTop || 0);
-      const worksTop = worksEl ? worksEl.offsetTop : vh;
-      const hp = clamp(scrollY / Math.max(1, worksTop), 0, 1);
-
-      // smoothed pointer
-      ppx += (pointer.x - ppx) * 0.065;
-      ppy += (pointer.y - ppy) * 0.065;
-      pvx += (pointer.vx - pvx) * 0.12; pointer.vx *= 0.82;
-      pvy += (pointer.vy - pvy) * 0.12; pointer.vy *= 0.82;
-
-      // camera
-      const par   = isMobile ? 0.5 : 1.0;
-      const autoX = isMobile ? Math.sin(t * 0.22) * 0.55 : 0;
-      const autoY = isMobile ? Math.cos(t * 0.18) * 0.32 : 0;
-      camera.position.set(
-        (ppx * 2.6 + pvx * 7.0) * par + autoX,
-        (-ppy * 1.8 - pvy * 5.0) * par + autoY,
-        7
-      );
-      camera.lookAt(-ppx * 1.7 * par + autoX * 0.5, ppy * 1.25 * par + autoY * 0.5, -5);
-      camera.rotation.z = -ppx * 0.05;
-
-      /* ---- hero model â€” behind the title text ---- */
-      const heroOp = clamp(1 - hp * 1.15, 0, 1);
-      if (heroModel) {
-        heroGroup.visible = heroOp > 0.01;
-        if (heroGroup.visible) {
-          heroModel.rotation.y += dt * 0.22 + pvx * 0.3;
-          heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.25, 0.05);
-          heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.08, 0.05);
-          const parkX = isMobile ? 0 : 0;
-          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5 + pvx * 1.0 + hp * 0.4, 0.05);
-          heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3 - pvy * 0.6, 0.05);
-          const s  = lerp(isMobile ? 0.8 : 0.9, isMobile ? 1.1 : 1.3, hp);
-          heroGroup.position.z = hp * 2.5;
-          heroGroup.scale.setScalar(s);
-          for (let i = 0; i < heroMats.length; i++) {
-            heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
-          }
-        }
-      }
-
-      /* ---- about model â€” visible only when its section is on screen ---- */
-      const aboutSpot = document.getElementById('modelAboutSpot');
-      let aboutInView = false;
-      if (aboutSpot && aboutModel) {
-        const r = aboutSpot.getBoundingClientRect();
-        aboutInView = r.top < vh && r.bottom > 0;
-        aboutGroup.visible = aboutInView;
-        if (aboutInView) {
-          aboutModel.rotation.y += dt * 0.25;
-          aboutModel.rotation.x += dt * 0.04;
-          aboutModel.rotation.z += dt * 0.02;
-        }
-      }
-
-      /* ---- contact model â€” visible only when its section is on screen ---- */
-      const contactSpot = document.getElementById('modelContactSpot');
-      let contactInView = false;
-      if (contactSpot && contactModel) {
-        const r = contactSpot.getBoundingClientRect();
-        contactInView = r.top < vh && r.bottom > 0;
-        contactGroup.visible = contactInView;
-        if (contactInView) {
-          contactModel.rotation.y += dt * 0.25;
-          contactModel.rotation.x += dt * 0.04;
-          contactModel.rotation.z += dt * 0.02;
-        }
-      }
-
-      const anyLive = (heroOp > 0.01 && heroModel) || aboutInView || contactInView;
-      if (anyLive !== !hidden) {
-        hidden = !anyLive;
-        canvas.classList.toggle('is-live', anyLive);
-      }
-
-      if (anyLive && !document.hidden) renderer.render(scene, camera);
-      requestAnimationFrame(frame);
-    }
-
-    /* ---- resize ---- */
-    let resizeTmr;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTmr);
-      resizeTmr = setTimeout(() => {
-        const w = window.innerWidth, h = window.innerHeight;
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.6 : 2));
-        renderer.setSize(w, h, false);
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-      }, 160);
-    });
-
-    requestAnimationFrame(frame);
-  }
-})();
+/* ==========================================================================9d=9=ƒŠP±°€Í±…å•ÉÌ€¡Q¡É•”¹©Ì¤(€€ƒŠˆ¡•É¼µ½‘•°èÕÉÍ½Èµ¡…Í”€¬ÍÉ½±°™…‘”°Á½Í¥Ñ¥½¹•Ñ¼Ñ¡”É¥¡Ð(€€ƒŠ
+…‰½ÕÐµ½‘•°è•¹ÑÉ•°dµÍÁ¥¸°™¥á•…‰½Ù”ÍÑ…Ñ•µ•¹ÐÍ•Ñ¥½¸(€€ƒŠˆ½¹Ñ…Ðµ½‘•°è•¹ÑÉ•°dµÍÁ¥¸°…±Ý…åÌÙ¥Í¥‰±”(ôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôô€¨¼)¥µÁ½ÉÐ€¨…ÌQ!I™É½´€œ¸½Ù•¹‘½È½Ñ¡É•”¹µ½‘Õ±”¹©Ìœì(  ¤€ôøì(€€ÕÍ”ÍÑÉ¥Ðœì((€€¼¨€´´´´´´´´´´´…Á…‰¥±¥Ñä…Ñ”€´´´´´´´´´´´´´´´´´´´´´´´´´€¨¼(€½¹ÍÐ™¥¹•A½¥¹Ñ•È€€ôµ…Ñ¡5•‘¥„ œ¡Á½¥¹Ñ•Èè™¥¹”¤œ¤¹µ…Ñ¡•Ìì(€½¹ÍÐ¥Í5½‰¥±”€€€€€ô€…™¥¹•A½¥¹Ñ•ÈñðÝ¥¹‘½Ü¹¥¹¹•É]¥‘Ñ €ð€ÜØàì(€½¹ÍÐÙ•Éå1½Ý¹€€€ô€¡¹…Ù¥…Ñ½È¹‘•Ù¥•5•µ½Éä€„ô¹Õ±°€˜˜¹…Ù¥…Ñ½È¹‘•Ù¥•5•µ½Éä€ð€À¸Ô¤ì((€¥˜€¡Ù•Éå1½Ý¹¤ì(€€€½¹Í½±”¹±½œ m¡•É¼Í‘tÍ•¹”Í­¥ÁÁ•è‘•Ù¥•5•µ½Éäôœ€¬¹…Ù¥…Ñ½È¹‘•Ù¥•5•µ½Éä¤ì(€€€É•ÑÕÉ¸ì(€ô((€½¹ÍÐ…¹Ù…Ì€ô‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% ¡•É½…¹Ù…Ìœ¤ì(€¥˜€ ……¹Ù…Ì¤É•ÑÕÉ¸ì((€™Õ¹Ñ¥½¸µ…­•I•¹‘•É•È ¤ì(€€€½¹ÍÐÑÉ¥•Ì€ôl(€€€€€ì…¹Ù…Ì°…¹Ñ¥…±¥…ÌèÑÉÕ”°€…±Á¡„èÑÉÕ”ô°(€€€€€ì…¹Ù…Ì°…¹Ñ¥…±¥…Ìè™…±Í”°…±Á¡„èÑÉÕ”ô°(€€€€€ì…¹Ù…Ì°…±Á¡„èÑÉÕ”°™…¥±%™5…©½ÉA•É™½Éµ…¹•…Ù•…Ðè™…±Í”ô°(€€€tì(€€€™½È€¡½¹ÍÐ½ÁÑÌ½˜ÑÉ¥•Ì¤ì(€€€€€ÑÉäì(€€€€€€€½¹ÍÐÈ€ô¹•ÜQ!I¹]•‰1I•¹‘•É•È¡½ÁÑÌ¤ì(€€€€€€€¥˜€¡È€˜˜È¹•Ñ½¹Ñ•áÐ€˜˜È¹•Ñ½¹Ñ•áÐ ¤¤É•ÑÕÉ¸Èì(€€€€€ô…Ñ €¡”¤ì€¼¨ÑÉä¹•áÐ€¨¼ô(€€€ô(€€€É•ÑÕÉ¸¹Õ±°ì(€ô((€½¹ÍÐÉ•¹‘•É•È€ôµ…­•I•¹‘•É•È ¤ì(€¥˜€ …É•¹‘•É•È¤ì½¹Í½±”¹±½œ m¡•É¼Í‘t¹¼]•‰0½¹Ñ•áÐ…Ù…¥±…‰±”œ¤ìÉ•ÑÕÉ¸ìô((€½¹Í½±”¹±½œ m¡•É¼Í‘tÍ•¹”¥¹¥Ñ¥…±¥é¥¹œ¸¸¸œ¤ì((€€¼¨€´´´´´´´´´´´Íµ…±°ÕÑ¥±Ì€´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´€¨¼(€½¹ÍÐ±…µÀ€ô€¡Ø°„°ˆ¤€ôø5…Ñ ¹µ¥¸¡ˆ°5…Ñ ¹µ…à¡„°Ø¤¤ì(€½¹ÍÐ±•ÉÀ€€ô€¡„°ˆ°Ð¤€ôø„€¬€¡ˆ€´„¤€¨Ðì(€½¹ÍÐÑ½MÉŒ€ô€¡˜¤€ôø˜¹É•Á±…” ¼€½œ°€œ”ÈÀœ¤¹É•Á±…” ½p ½œ°€œ”Èàœ¤¹É•Á±…” ½p¤½œ°€œ”Èäœ¤ì((€ÑÉäì¥¹¥Ð ¤ìô(€…Ñ €¡”¤ì½¹Í½±”¹Ý…É¸ m¡•É¼Í‘t‘¥Í…‰±•€´øœ°”¤ì…¹Ù…Ì¹ÍÑå±”¹‘¥ÍÁ±…ä€ô€¹½¹”œìô((€™Õ¹Ñ¥½¸±½…‘=¹•5½‘•°¡™¥±”°É½ÕÀ°µ…ÑÍÉÈ°±…‰•°°½¹½¹”¤ì(€€€¥˜€ …™¥±”¤ì½¹Í½±”¹±½œ m¡•É¼Í‘t¹¼µ½‘•±¥±”™½Èœ°±…‰•°¤ìÉ•ÑÕÉ¸ìô(€€€½¹Í½±”¹±½œ m¡•É¼Í‘t±½…‘¥¹œœ°±…‰•°°€œèœ°™¥±”¤ì(€€€¥µÁ½ÉÐ œ¸½Ù•¹‘½È½1Q1½…‘•È¹©Ìœ¤(€€€€€€¹Ñ¡•¸ ¡ì1Q1½…‘•Èô¤€ôø¹•Ü1Q1½…‘•È ¤¹±½… (€€€€€€€Ñ½MÉŒ¡™¥±”¤°(€€€€€€€€¡±Ñ˜¤€ôøì(€€€€€€€€€½¹ÍÐ½‰¨€ô±Ñ˜¹Í•¹”ñð€¡±Ñ˜¹Í•¹•Ì€˜˜±Ñ˜¹Í•¹•ÍlÁt¤ì(€€€€€€€€€¥˜€ …½‰¨¤É•ÑÕÉ¸ì(€€€€€€€€€½¹ÍÐ‰½à€ô¹•ÜQ!I¹	½àÌ ¤¹Í•ÑÉ½µ=‰©•Ð¡½‰¨¤ì(€€€€€€€€€½¹ÍÐÍ¥é”€ô‰½à¹•ÑM¥é”¡¹•ÜQ!I¹Y•Ñ½ÈÌ ¤¤ì(€€€€€€€€€½¹ÍÐµ…á¥´€ô5…Ñ ¹µ…à¡Í¥é”¹à°Í¥é”¹ä°Í¥é”¹è¤ñð€Äì(€€€€€€€€€½¹ÍÐÑ…É•ÑM…±”€ô±…‰•°€ôôô€¡•É¼œ€ü€Ì¸È€è€È¸àì(€€€€€€€€€½‰¨¹Í…±”¹Í•ÑM…±…È¡Ñ…É•ÑM…±”€¼µ…á¥´¤ì(€€€€€€€€€‰½à¹Í•ÑÉ½µ=‰©•Ð¡½‰¨¤ì(€€€€€€€€€½‰¨¹Á½Í¥Ñ¥½¸¹ÍÕˆ¡‰½à¹•Ñ•¹Ñ•È¡¹•ÜQ!I¹Y•Ñ½ÈÌ ¤¤¤ì(€€€€€€€€€½‰¨¹ÑÉ…Ù•ÉÍ” ¡¸¤€ôøì(€€€€€€€€€€€¥˜€ …¸¹¥Í5•Í ñð€…¸¹µ…Ñ•É¥…°¤É•ÑÕÉ¸ì(€€€€€€€€€€€€¡ÉÉ…ä¹¥ÍÉÉ…ä¡¸¹µ…Ñ•É¥…°¤€ü¸¹µ…Ñ•É¥…°€èm¸¹µ…Ñ•É¥…±t¤¹™½É…  ¡´¤€ôøì(€€€€€€€€€€€€€´¹ÑÉ…¹ÍÁ…É•¹Ð€ôÑÉÕ”ì(€€€€€€€€€€€€€´¹ÕÍ•É…Ñ„¹‰…Í•=Á…¥Ñä€ô€¡´¹½Á…¥Ñä€„ô¹Õ±°€ü´¹½Á…¥Ñä€è€Ä¤ì(€€€€€€€€€€€€€µ…ÑÍÉÈ¹ÁÕÍ ¡´¤ì(€€€€€€€€€€€ô¤ì(€€€€€€€€€ô¤ì(€€€€€€€€€½¹ÍÐ…µˆ€ô¹•ÜQ!I¹µ‰¥•¹Ñ1¥¡Ð Áá™™™™™˜°€Ä¸ÄÔ¤ì(€€€€€€€€€½¹ÍÐ­•ä€ô¹•ÜQ!I¹¥É•Ñ¥½¹…±1¥¡Ð Áá™™™™™˜°€Ä¸Ø¤ì(€€€€€€€€€­•ä¹Á½Í¥Ñ¥½¸¹Í•Ð È¸Ô°€Ì°€Ð¤ì(€€€€€€€€€É½ÕÀ¹…‘¡…µˆ°­•ä°½‰¨¤ì(€€€€€€€€€É½ÕÀ¹Ù¥Í¥‰±”€ôÑÉÕ”ì(€€€€€€€€€…¹Ù…Ì¹±…ÍÍ1¥ÍÐ¹…‘ ¥Ìµ±¥Ù”œ¤ì(€€€€€€€€€½¹Í½±”¹±½œ m¡•É¼Í‘tœ°±…‰•°°€±½…‘•œ¤ì(€€€€€€€€€¥˜€¡½¹½¹”¤½¹½¹”¡½‰¨¤ì(€€€€€€€ô°(€€€€€€€Õ¹‘•™¥¹•°(€€€€€€€€¡•ÉÈ¤€ôø½¹Í½±”¹Ý…É¸ m¡•É¼Í‘tœ°±…‰•°°€±½…•ÉÉ½È€´øœ°•ÉÈ¤(€€€€€€¤¤(€€€€€€¹…Ñ  ¡•ÉÈ¤€ôø½¹Í½±”¹Ý…É¸ m¡•É¼Í‘t1Q1½…‘•ÈÕ¹…Ù…¥±…‰±”€´øœ°•ÉÈ¤¤ì(€ô((€™Õ¹Ñ¥½¸¥¹¥Ð ¤ì(€€€½¹ÍÐAH€ô5…Ñ ¹µ¥¸¡Ý¥¹‘½Ü¹‘•Ù¥•A¥á•±I…Ñ¥¼ñð€Ä°¥Í5½‰¥±”€ü€Ä¸Ø€è€È¤ì(€€€É•¹‘•É•È¹Í•ÑA¥á•±I…Ñ¥¼¡AH¤ì(€€€É•¹‘•É•È¹Í•ÑM¥é”¡Ý¥¹‘½Ü¹¥¹¹•É]¥‘Ñ °Ý¥¹‘½Ü¹¥¹¹•É!•¥¡Ð°™…±Í”¤ì(€€€É•¹‘•É•È¹½ÕÑÁÕÑ½±½ÉMÁ…”€ôQ!I¹1¥¹•…ÉMI	½±½ÉMÁ…”ì((€€€½¹ÍÐÍ•¹”€€ô¹•ÜQ!I¹M•¹” ¤ì(€€€½¹ÍÐ…µ•É„€ô¹•ÜQ!I¹A•ÉÍÁ•Ñ¥Ù•…µ•É„ ÐÈ°Ý¥¹‘½Ü¹¥¹¹•É]¥‘Ñ €¼Ý¥¹‘½Ü¹¥¹¹•É!•¥¡Ð°€À¸Ä°€ÈÀÀ¤ì(€€€…µ•É„¹Á½Í¥Ñ¥½¸¹Í•Ð À°€À°€Ü¤ì((€€€€¼¨€´´´´!I<€´´´´€¨¼(€€€½¹ÍÐ¡•É½É½ÕÀ€ô¹•ÜQ!I¹É½ÕÀ ¤ì(€€€¡•É½É½ÕÀ¹Ù¥Í¥‰±”€ô™…±Í”ì(€€€Í•¹”¹…‘¡¡•É½É½ÕÀ¤ì(€€€±•Ð¡•É½5½‘•°€ô¹Õ±°ì(€€€½¹ÍÐ¡•É½5…ÑÌ€ômtì((€€€€¼¨€´´´´	=UP€´´´´€¨¼(€€€½¹ÍÐ…‰½ÕÑÉ½ÕÀ€ô¹•ÜQ!I¹É½ÕÀ ¤ì(€€€…‰½ÕÑÉ½ÕÀ¹Ù¥Í¥‰±”€ô™…±Í”ì(€€€…‰½ÕÑÉ½ÕÀ¹Á½Í¥Ñ¥½¸¹Í•Ð À°€À¸à°€´Ð¤ì(€€€Í•¹”¹…‘¡…‰½ÕÑÉ½ÕÀ¤ì(€€€±•Ð…‰½ÕÑ5½‘•°€ô¹Õ±°ì(€€€½¹ÍÐ…‰½ÕÑ5…ÑÌ€ômtì((€€€€¼¨€´´´´=9QP€´´´´€¨¼(€€€½¹ÍÐ½¹Ñ…ÑÉ½ÕÀ€ô¹•ÜQ!I¹É½ÕÀ ¤ì(€€€½¹Ñ…ÑÉ½ÕÀ¹Ù¥Í¥‰±”€ô™…±Í”ì(€€€½¹Ñ…ÑÉ½ÕÀ¹Á½Í¥Ñ¥½¸¹Í•Ð À°€À°€´ÈÀ¤ì(€€€Í•¹”¹…‘¡½¹Ñ…ÑÉ½ÕÀ¤ì(€€€±•Ð½¹Ñ…Ñ5½‘•°€ô¹Õ±°ì(€€€½¹ÍÐ½¹Ñ…Ñ5…ÑÌ€ômtì((€€€™Õ¹Ñ¥½¸±½…‘±°¡½¹Ñ•¹Ð¤ì(€€€€€±½…‘=¹•5½‘•°¡½¹Ñ•¹Ð€˜˜½¹Ñ•¹Ð¹¡•É¼€˜˜½¹Ñ•¹Ð¹¡•É¼¹µ½‘•±¥±”°¡•É½É½ÕÀ°¡•É½5…ÑÌ°€¡•É¼œ°€¡½‰¨¤€ôøì¡•É½5½‘•°€ô½‰¨ìô¤ì(€€€€€±½…‘=¹•5½‘•°¡½¹Ñ•¹Ð€˜˜½¹Ñ•¹Ð¹…‰½ÕÐ€˜˜½¹Ñ•¹Ð¹…‰½ÕÐ¹µ½‘•±¥±”°…‰½ÕÑÉ½ÕÀ°…‰½ÕÑ5…ÑÌ°€…‰½ÕÐœ°€¡½‰¨¤€ôøì…‰½ÕÑ5½‘•°€ô½‰¨ìô¤ì(€€€€€±½…‘=¹•5½‘•°¡½¹Ñ•¹Ð€˜˜½¹Ñ•¹Ð¹½¹Ñ…Ð€˜˜½¹Ñ•¹Ð¹½¹Ñ…Ð¹µ½‘•±¥±”°½¹Ñ…ÑÉ½ÕÀ°½¹Ñ…Ñ5…ÑÌ°€½¹Ñ…Ðœ°€¡½‰¨¤€ôøì½¹Ñ…Ñ5½‘•°€ô½‰¨ìô¤ì(€€€ô((€€€¥˜€¡Ý¥¹‘½Ü¹=9=}=9Q9P¤±½…‘±°¡Ý¥¹‘½Ü¹=9=}=9Q9P¤ì(€€€•±Í”Ý¥¹‘½Ü¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ™½•¹½™˜é½¹Ñ•¹Ðœ°€¡”¤€ôø±½…‘±°¡”¹‘•Ñ…¥°¤°ì½¹”èÑÉÕ”ô¤ì((€€€€¼¨€´´´´´A=%9QH€´´´´´€¨¼(€€€½¹ÍÐÁ½¥¹Ñ•È€ôìàè€À°äè€À°Ùàè€À°Ùäè€Àôì(€€€Ý¥¹‘½Ü¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È Á½¥¹Ñ•Éµ½Ù”œ°€¡”¤€ôøì(€€€€€½¹ÍÐ¹à€ô€¡”¹±¥•¹Ñ`€¼Ý¥¹‘½Ü¹¥¹¹•É]¥‘Ñ ¤€¨€È€´€Äì(€€€€€½¹ÍÐ¹ä€ô€¡”¹±¥•¹Ñd€¼Ý¥¹‘½Ü¹¥¹¹•É!•¥¡Ð¤€¨€È€´€Äì(€€€€€Á½¥¹Ñ•È¹Ùà€ô¹à€´Á½¥¹Ñ•È¹àì(€€€€€Á½¥¹Ñ•È¹Ùä€ô¹ä€´Á½¥¹Ñ•È¹äì(€€€€€Á½¥¹Ñ•È¹à€ô¹àì(€€€€€Á½¥¹Ñ•È¹ä€ô¹äì(€€€ô°ìÁ…ÍÍ¥Ù”èÑÉÕ”ô¤ì((€€€€¼¨€´´´´´I9H1==@€´´´´´€¨¼(€€€½¹ÍÐÝ½É­Í°€ô‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% Ý½É­Ìœ¤ì(€€€½¹ÍÐÍÑ…Ñ•µ•¹Ñ°€ô‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% ÍÑ…Ñ•µ•¹Ðœ¤ì(€€€±•ÐÁÁà€ô€À°ÁÁä€ô€À°ÁÙà€ô€À°ÁÙä€ô€Àì(€€€±•Ð¡¥‘‘•¸€ôÑÉÕ”ì(€€€½¹ÍÐ±½¬€ô¹•ÜQ!I¹±½¬ ¤ì((€€€™Õ¹Ñ¥½¸™É…µ” ¤ì(€€€€€½¹ÍÐ‘Ð€ô5…Ñ ¹µ¥¸¡±½¬¹•Ñ•±Ñ„ ¤°€À¸ÀÔ¤ì(€€€€€½¹ÍÐÐ€€ô±½¬¹•±…ÁÍ•‘Q¥µ”ì(€€€€€½¹ÍÐÙ €ôÝ¥¹‘½Ü¹¥¹¹•É!•¥¡Ðì((€€€€€½¹ÍÐÍÉ½±±d€€ôÝ¥¹‘½Ü¹ÍÉ½±±dñð€¡‘½Õµ•¹Ð¹‘½Õµ•¹Ñ±•µ•¹Ð¹ÍÉ½±±Q½Àñð€À¤ì(€€€€€½¹ÍÐÝ½É­ÍQ½À€ôÝ½É­Í°€üÝ½É­Í°¹½™™Í•ÑQ½À€èÙ ì(€€€€€½¹ÍÐ¡À€ô±…µÀ¡ÍÉ½±±d€¼5…Ñ ¹µ…à Ä°Ý½É­ÍQ½À¤°€À°€Ä¤ì((€€€€€€¼¼Íµ½½Ñ¡•Á½¥¹Ñ•È(€€€€€ÁÁà€¬ô€¡Á½¥¹Ñ•È¹à€´ÁÁà¤€¨€À¸ÀØÔì(€€€€€ÁÁä€¬ô€¡Á½¥¹Ñ•È¹ä€´ÁÁä¤€¨€À¸ÀØÔì(€€€€€ÁÙà€¬ô€¡Á½¥¹Ñ•È¹Ùà€´ÁÙà¤€¨€À¸ÄÈìÁ½¥¹Ñ•È¹Ùà€¨ô€À¸àÈì(€€€€€ÁÙä€¬ô€¡Á½¥¹Ñ•È¹Ùä€´ÁÙä¤€¨€À¸ÄÈìÁ½¥¹Ñ•È¹Ùä€¨ô€À¸àÈì((€€€€€€¼¼…µ•É„(€€€€€½¹ÍÐÁ…È€€€ô¥Í5½‰¥±”€ü€À¸Ô€è€Ä¸Àì(€€€€€½¹ÍÐ…ÕÑ½`€ô¥Í5½‰¥±”€ü5…Ñ ¹Í¥¸¡Ð€¨€À¸ÈÈ¤€¨€À¸ÔÔ€è€Àì(€€€€€½¹ÍÐ…ÕÑ½d€ô¥Í5½‰¥±”€ü5…Ñ ¹½Ì¡Ð€¨€À¸Äà¤€¨€À¸ÌÈ€è€Àì(€€€€€…µ•É„¹Á½Í¥Ñ¥½¸¹Í•Ð (€€€€€€€€¡ÁÁà€¨€È¸Ø€¬ÁÙà€¨€Ü¸À¤€¨Á…È€¬…ÕÑ½`°(€€€€€€€€ µÁÁä€¨€Ä¸à€´ÁÙä€¨€Ô¸À¤€¨Á…È€¬…ÕÑ½d°(€€€€€€€€Ü(€€€€€€¤ì(€€€€€…µ•É„¹±½½­Ð µÁÁà€¨€Ä¸Ü€¨Á…È€¬…ÕÑ½`€¨€À¸Ô°ÁÁä€¨€Ä¸ÈÔ€¨Á…È€¬…ÕÑ½d€¨€À¸Ô°€´Ô¤ì(€€€€€…µ•É„¹É½Ñ…Ñ¥½¸¹è€ô€µÁÁà€¨€À¸ÀÔì((€€€€€€¼¨€´´´´¡•É¼µ½‘•°€´‰•¡¥¹Ñ¡”Ñ¥Ñ±”Ñ•áÐ°É¥¡Ðµ…±¥¹•€´´´´€¨¼(€€€€€½¹ÍÐ¡•É½=À€ô±…µÀ Ä€´¡À€¨€Ä¸ÄÔ°€À°€Ä¤ì(€€€€€¥˜€¡¡•É½5½‘•°¤ì(€€€€€€€¡•É½É½ÕÀ¹Ù¥Í¥‰±”€ô¡•É½=À€ø€À¸ÀÄì(€€€€€€€¥˜€¡¡•É½É½ÕÀ¹Ù¥Í¥‰±”¤ì(€€€€€€€€€¡•É½5½‘•°¹É½Ñ…Ñ¥½¸¹ä€¬ô‘Ð€¨€À¸ÈÈ€¬ÁÙà€¨€À¸Ìì(€€€€€€€€€¡•É½É½ÕÀ¹É½Ñ…Ñ¥½¸¹à€ô±•ÉÀ¡¡•É½É½ÕÀ¹É½Ñ…Ñ¥½¸¹à°€µÁÁä€¨€À¸ÈÔ°€À¸ÀÔ¤ì(€€€€€€€€€¡•É½É½ÕÀ¹É½Ñ…Ñ¥½¸¹è€ô±•ÉÀ¡¡•É½É½ÕÀ¹É½Ñ…Ñ¥½¸¹è°ÁÁà€¨€À¸Àà°€À¸ÀÔ¤ì(€€€€€€€€€½¹ÍÐÁ…É­`€ô¥Í5½‰¥±”€ü€Ä¸À€è€È¸Èì(€€€€€€€€€¡•É½É½ÕÀ¹Á½Í¥Ñ¥½¸¹à€ô±•ÉÀ¡¡•É½É½ÕÀ¹Á½Í¥Ñ¥½¸¹à°Á…É­`€¬ÁÁà€¨€À¸Ô€¬ÁÙà€¨€Ä¸À€¬¡À€¨€À¸Ð°€À¸ÀÔ¤ì(€€€€€€€€€¡•É½É½ÕÀ¹Á½Í¥Ñ¥½¸¹ä€ô±•ÉÀ¡¡•É½É½ÕÀ¹Á½Í¥Ñ¥½¸¹ä°€¡¥Í5½‰¥±”€ü€À¸Ì€è€À¤€´ÁÁä€¨€À¸Ì€´ÁÙä€¨€À¸Ø°€À¸ÀÔ¤ì(€€€€€€€€€½¹ÍÐÌ€€ô±•ÉÀ¡¥Í5½‰¥±”€ü€À¸à€è€À¸ä°¥Í5½‰¥±”€ü€Ä¸Ä€è€Ä¸Ì°¡À¤ì(€€€€€€€€€¡•É½É½ÕÀ¹Á½Í¥Ñ¥½¸¹è€ô¡À€¨€È¸Ôì(€€€€€€€€€¡•É½É½ÕÀ¹Í…±”¹Í•ÑM…±…È¡Ì¤ì(€€€€€€€€€™½È€¡±•Ð¤€ô€Àì¤€ð¡•É½5…ÑÌ¹±•¹Ñ ì¤¬¬¤ì(€€€€€€€€€€€¡•É½5…ÑÍm¥t¹½Á…¥Ñä€ô¡•É½5…ÑÍm¥t¹ÕÍ•É…Ñ„¹‰…Í•=Á…¥Ñä€¨¡•É½=Àì(€€€€€€€€€ô(€€€€€€€ô(€€€€€ô((€€€€€€¼¨€´´´´…‰½ÕÐµ½‘•°€´™¥á•…‰½Ù”Ñ¡”ÍÑ…Ñ•µ•¹ÐÍ•Ñ¥½¸€´´´´€¨¼(€€€€€±•Ð…‰½ÕÑ%¹Y¥•Ü€ô™…±Í”ì(€€€€€¥˜€¡ÍÑ…Ñ•µ•¹Ñ°€˜˜…‰½ÕÑ5½‘•°¤ì(€€€€€€€½¹ÍÐÈ€ôÍÑ…Ñ•µ•¹Ñ°¹•Ñ	½Õ¹‘¥¹±¥•¹ÑI•Ð ¤ì(€€€€€€€…‰½ÕÑ%¹Y¥•Ü€ôÈ¹Ñ½À€ðÙ €¬€ÄÔÀ€˜˜È¹‰½ÑÑ½´€ø€´ÄÔÀì(€€€€€€€…‰½ÕÑÉ½ÕÀ¹Ù¥Í¥‰±”€ô…‰½ÕÑ%¹Y¥•Üì(€€€€€€€¥˜€¡…‰½ÕÑ%¹Y¥•Ü¤ì(€€€€€€€€€…‰½ÕÑ5½‘•°¹É½Ñ…Ñ¥½¸¹ä€¬ô‘Ð€¨€À¸ÈÔì(€€€€€€€€€…‰½ÕÑ5½‘•°¹É½Ñ…Ñ¥½¸¹à€¬ô‘Ð€¨€À¸ÀÐì(€€€€€€€€€…‰½ÕÑ5½‘•°¹É½Ñ…Ñ¥½¸¹è€¬ô‘Ð€¨€À¸ÀÈì(€€€€€€€ô(€€€€€ô((€€€€€€¼¨€´´´´½¹Ñ…Ðµ½‘•°€´´´´€¨¼(€€€€€½¹ÍÐ½¹Ñ…ÑMÁ½Ð€ô‘½Õµ•¹Ð¹•Ñ±•µ•¹Ñ	å% µ½‘•±½¹Ñ…ÑMÁ½Ðœ¤ì(€€€€€±•Ð½¹Ñ…Ñ%¹Y¥•Ü€ô™…±Í”ì(€€€€€¥˜€¡½¹Ñ…ÑMÁ½Ð€˜˜½¹Ñ…Ñ5½‘•°¤ì(€€€€€€€½¹ÍÐÈ€ô½¹Ñ…ÑMÁ½Ð¹•Ñ	½Õ¹‘¥¹±¥•¹ÑI•Ð ¤ì(€€€€€€€½¹Ñ…Ñ%¹Y¥•Ü€ôÈ¹Ñ½À€ðÙ €˜˜È¹‰½ÑÑ½´€ø€Àì(€€€€€€€½¹Ñ…ÑÉ½ÕÀ¹Ù¥Í¥‰±”€ô½¹Ñ…Ñ%¹Y¥•Üì(€€€€€€€¥˜€¡½¹Ñ…Ñ%¹Y¥•Ü¤ì(€€€€€€€€€½¹Ñ…Ñ5½‘•°¹É½Ñ…Ñ¥½¸¹ä€¬ô‘Ð€¨€À¸ÈÔì(€€€€€€€€€½¹Ñ…Ñ5½‘•°¹É½Ñ…Ñ¥½¸¹à€¬ô‘Ð€¨€À¸ÀÐì(€€€€€€€€€½¹Ñ…Ñ5½‘•°¹É½Ñ…Ñ¥½¸¹è€¬ô‘Ð€¨€À¸ÀÈì(€€€€€€€ô(€€€€€ô((€€€€€½¹ÍÐ…¹å1¥Ù”€ô€¡¡•É½=À€ø€À¸ÀÄ€˜˜¡•É½5½‘•°¤ñð…‰½ÕÑ%¹Y¥•Üñð½¹Ñ…Ñ%¹Y¥•Üì(€€€€€¥˜€¡…¹å1¥Ù”€„ôô€…¡¥‘‘•¸¤ì(€€€€€€€¡¥‘‘•¸€ô€……¹å1¥Ù”ì(€€€€€€€…¹Ù…Ì¹±…ÍÍ1¥ÍÐ¹Ñ½±” ¥Ìµ±¥Ù”œ°…¹å1¥Ù”¤ì(€€€€€ô((€€€€€¥˜€¡…¹å1¥Ù”€˜˜€…‘½Õµ•¹Ð¹¡¥‘‘•¸¤É•¹‘•É•È¹É•¹‘•È¡Í•¹”°…µ•É„¤ì(€€€€€É•ÅÕ•ÍÑ¹¥µ…Ñ¥½¹É…µ”¡™É…µ”¤ì(€€€ô((€€€€¼¨€´´´´´É•Í¥é”€´´´´´€¨¼(€€€±•ÐÉ•Í¥é•QµÈì(€€€Ý¥¹‘½Ü¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È É•Í¥é”œ°€ ¤€ôøì(€€€€€±•…ÉQ¥µ•½ÕÐ¡É•Í¥é•QµÈ¤ì(€€€€€É•Í¥é•QµÈ€ôÍ•ÑQ¥µ•½ÕÐ  ¤€ôøì(€€€€€€€½¹ÍÐÜ€ôÝ¥¹‘½Ü¹¥¹¹•É]¥‘Ñ ° €ôÝ¥¹‘½Ü¹¥¹¹•É!•¥¡Ðì(€€€€€€€É•¹‘•É•È¹Í•ÑA¥á•±I…Ñ¥¼¡5…Ñ ¹µ¥¸¡Ý¥¹‘½Ü¹‘•Ù¥•A¥á•±I…Ñ¥¼ñð€Ä°¥Í5½‰¥±”€ü€Ä¸Ø€è€È¤¤ì(€€€€€€€É•¹‘•É•È¹Í•ÑM¥é”¡Ü° °™…±Í”¤ì(€€€€€€€…µ•É„¹…ÍÁ•Ð€ôÜ€¼ ì(€€€€€€€…µ•É„¹ÕÁ‘…Ñ•AÉ½©•Ñ¥½¹5…ÑÉ¥à ¤ì(€€€€€ô°€ÄØÀ¤ì(€€€ô¤ì((€€€É•ÅÕ•ÍÑ¹¥µ…Ñ¥½¹É…µ”¡™É…µ”¤ì(€ô)ô¤ ¤ì
