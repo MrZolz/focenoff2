@@ -44,8 +44,7 @@ import * as THREE from './vendor/three.module.js';
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const lerp  = (a, b, t) => a + (b - a) * t;
-  const toSrc = (f) => f.replace(/ /g, '%20').replace(/\\(/g, '%28').replace(/\\)/g, '%29');
-
+  const toSrc = (f) => f.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
   try { init(); }
   catch (e) { console.warn('[hero3d] disabled ->', e); canvas.style.display = 'none'; }
 
