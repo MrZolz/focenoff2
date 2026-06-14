@@ -15,8 +15,8 @@
   "hero": {
     "modelFile": "media/iPhone 17 Pro.glb"
   },
-  "about": { 
-    "modelFile": "media/low_poly_stack_of_money.glb" 
+  "about": {
+    "modelFile": "media/low_poly_stack_of_money.glb"
   },
   "contact": {
     "modelFile": ""
@@ -41,17 +41,25 @@
     "SHORTS VIDEO"
   ],
   "menu": [
+    { "text": "WORKS",   "href": "#works" },
+    { "text": "CONTACT", "href": "#contact" },
+    { "text": "ABOUT",   "href": "#statement" }
+  ],
+  "workedWith": [
     {
-      "text": "WORKS",
-      "href": "#works"
+      "name":   "Scammers",
+      "avatar": "https://i.postimg.cc/1XtbHq0R/Scammers-Ava.jpg",
+      "subs":   "2M+"
     },
     {
-      "text": "CONTACT",
-      "href": "#contact"
+      "name":   "Харчевников",
+      "avatar": "https://i.postimg.cc/Qd2SfNgm/Snimok-ekrana-2026-03-03-v-19-27-23.png",
+      "subs":   "1.5M+"
     },
     {
-      "text": "ABOUT",
-      "href": "#statement"
+      "name":   "КЕШЗЛО",
+      "avatar": "https://yt3.googleusercontent.com/VrnR5j2rJIbjVAWBTAR1in3ZlqBb-M1deVz_j6qYzVKKPQ9twgu8IAN2BZu0cLwa0tUH2-hT9Q=s160-c-k-c0x00ffffff-no-rj",
+      "subs":   "500K+"
     }
   ],
   "sections": [
@@ -65,42 +73,42 @@
         {
           "file": "scammers.mp4",
           "title": "SCAMMERS",
-          "label": "Motion · YouTube",
+          "label": "Motion \u00b7 YouTube",
           "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
           "views": "*14* views"
         },
         {
           "file": "scammers (2).mp4",
           "title": "SCAMMERS",
-          "label": "Motion · YouTube",
+          "label": "Motion \u00b7 YouTube",
           "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
           "views": "*14* views"
         },
         {
           "file": "scammers (3).mp4",
           "title": "SCAMMERS",
-          "label": "Motion · YouTube",
+          "label": "Motion \u00b7 YouTube",
           "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
           "views": "*14* views"
         },
         {
           "file": "scammers (4).mp4",
           "title": "SCAMMERS",
-          "label": "Motion · YouTube",
+          "label": "Motion \u00b7 YouTube",
           "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
           "views": "*14* views"
         },
         {
           "file": "scammers (5).mp4",
           "title": "SCAMMERS",
-          "label": "Motion · YouTube",
+          "label": "Motion \u00b7 YouTube",
           "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
           "views": "*14* views"
         },
         {
           "file": "харчевников.mp4",
           "title": "ХАРЧЕВНИКОВ",
-          "label": "Motion · YouTube",
+          "label": "Motion \u00b7 YouTube",
           "ytUrl": "https://www.youtube.com/watch?v=n75_-ntNL2I",
           "views": "*4* views"
         }
@@ -125,7 +133,7 @@
           "videoId": "1xpPfVB1R64",
           "name": "КЭШЗЛО",
           "nameUrl": "https://www.youtube.com/watch?v=1xpPfVB1R64",
-          "type": "30 ДНЕЙ ТОРЧАЛ НА САМЫХ ПОПУЛЯРНЫХ Н##КОТИКАХ",
+          "type": "30 ДНЕЙ ТОРЧАЛ НА САМЫХ ПОПУЛЯРНЫХ Н##КОТИКАХ",
           "stat": "*543K* views"
         },
         {
