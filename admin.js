@@ -145,7 +145,7 @@ function renderTab() {
   const map = {
     hero: tabHero, marquee: tabMarquee, menu: tabMenu, sections: tabSections,
     contact: tabContact, about: tabAbout, footer: tabFooter, links: tabLinks,
-    models: tabModels,
+    models: tabModels, workedWith: tabWorkedWith,
   };
   panelContent.innerHTML = (map[activeTab] || tabHero)();
 }
@@ -268,7 +268,7 @@ function motionSectionUI(s, si) {
       ${uploadZone(`${base}.file`, 'video/mp4,video/webm', 'Перетащите .mp4 сюда или нажмите для выбора')}
       <div class="grid-2" style="margin-top:12px">
         ${field('Название', `${base}.title`)}
-        ${field('Подпись (label)', `${base}.label`, { placeholder: 'Motion · YouTube' })}
+        ${field('Подпись (label)', `${base}.label`, { placeholder: 'Motion \u00b7 YouTube' })}
       </div>
       <div class="grid-2">
         ${field('Ссылка на оригинал (YouTube)', `${base}.ytUrl`, { placeholder: 'https://www.youtube.com/watch?v=...' })}
@@ -364,7 +364,7 @@ function tabModels() {
   return tabHead('3D Модели', 'Загрузка .glb/.gltf моделей для разных секций сайта') +
     `<div class="card"><div class="stack">
       <div class="field__label">Hero — модель в шапке</div>
-      <p class="field__hint" style="margin-top:-4px">Справа от заголовка. Следует за курсором, увеличивается и уходит на задний план при скролле.</p>
+      <p class="field__hint" style="margin-top:-4px">Справа от заголовка. Следует за курсором, уменьшается и уходит на задний план при скролле.</p>
       ${uploadZone('hero.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
       ${getPath(content, 'hero.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="hero.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>
@@ -382,6 +382,36 @@ function tabModels() {
     </div></div>`;
 }
 
+/* ---------- WORKED WITH ---------- */
+function tabWorkedWith() {
+  const channels = content.workedWith || [];
+  const cards = channels.map((ch, i) => {
+    const avatarPreview = ch.avatar
+      ? `<div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+           <img src="${escAttr(ch.avatar)}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:1px solid rgba(0,0,0,0.12)" alt="" onerror="this.style.display='none'"/>
+           <span style="font-size:0.72rem;color:var(--muted)">Предпросмотр</span>
+         </div>`
+      : '';
+    return `<div class="card">
+      <div class="card__head">
+        <div class="card__title"><span class="tag">${String(i + 1).padStart(2, '0')}</span>${esc(ch.name || 'Канал')}</div>
+        ${toolBtns('workedWith', i, channels.length)}
+      </div>
+      <div class="stack">
+        <div class="grid-2">
+          ${field('Название канала', 'workedWith.' + i + '.name')}
+          ${field('Подписчики', 'workedWith.' + i + '.subs', { placeholder: '2M+' })}
+        </div>
+        ${field('URL аватарки', 'workedWith.' + i + '.avatar', { placeholder: 'https://...', hint: 'Прямая ссылка на фото канала (jpg/png/webp)' })}
+        ${avatarPreview}
+      </div>
+    </div>`;
+  }).join('');
+  return tabHead('Worked With', 'Каналы в бегущей дорожке «Worked With:» после блока About') +
+    cards +
+    `<button class="add-btn add-btn--block" data-act="add" data-arr="workedWith" data-kind="channel"><i class="fa-solid fa-plus"></i> Добавить канал</button>`;
+}
+
 /* ============================================================
    ДВУСТОРОННЕЕ СВЯЗЫВАНИЕ (ввод текста)
 ============================================================ */
@@ -395,8 +425,9 @@ panelContent.addEventListener('input', (e) => {
    ДЕЙСТВИЯ (add / del / up / down / addsection)
 ============================================================ */
 function newItem(kind) {
-  if (kind === 'clip')  return { file: '', title: '', label: 'Motion · YouTube', ytUrl: '', views: '' };
-  if (kind === 'video') return { thumbnail: '', videoId: '', name: '', nameUrl: '', type: '', stat: '' };
+  if (kind === 'clip')    return { file: '', title: '', label: 'Motion \u00b7 YouTube', ytUrl: '', views: '' };
+  if (kind === 'video')   return { thumbnail: '', videoId: '', name: '', nameUrl: '', type: '', stat: '' };
+  if (kind === 'channel') return { name: '', avatar: '', subs: '' };
   return '';
 }
 
