@@ -1,6 +1,6 @@
 /* ========================================================
    FOCENOFF — All 3D layers (Three.js)
-   → hero: zooms toward camera + shifts slightly left on scroll, fades out
+   → hero: recedes into background on scroll, fades out after hero section
    → about: anchored to #modelAboutSpot viewport position, no fade, Y-spin + gentle X/Z rock
    → contact: fixed position, Y-spin only
    Camera is fixed at (0,0,7) — all pointer motion is on group transforms
@@ -143,7 +143,11 @@ import * as THREE from './vendor/three.module.js';
     }, { passive: true });
 
     /* RENDER LOOP */
-    const worksEl     = document.getElementById('works');
+    /* heroEl = hero section (#top, height 100dvh).
+       We use its offsetHeight as the scroll distance over which the
+       exit animation plays so the model is fully gone once the hero
+       section leaves the viewport. */
+    const heroEl      = document.getElementById('top');
     const aboutSpotEl = document.getElementById('modelAboutSpot');
     let ppx = 0, ppy = 0;
     let hidden = true;
@@ -154,15 +158,17 @@ import * as THREE from './vendor/three.module.js';
       const t  = clock.elapsedTime;
       const vh = window.innerHeight;
 
-      const scrollY  = window.scrollY || (document.documentElement.scrollTop || 0);
-      const worksTop = worksEl ? worksEl.offsetTop : vh;
-      const hp = clamp(scrollY / Math.max(1, worksTop), 0, 1);
+      const scrollY    = window.scrollY || (document.documentElement.scrollTop || 0);
+      /* Trigger exit over the hero section height, not the full page. */
+      const heroHeight = heroEl ? heroEl.offsetHeight : vh;
+      const hp = clamp(scrollY / Math.max(1, heroHeight), 0, 1);
 
       // smooth pointer
       ppx += (pointer.x - ppx) * 0.065;
       ppy += (pointer.y - ppy) * 0.065;
 
-      /* HERO — zooms toward camera and grows as user scrolls; shifts slightly left; fades out */
+      /* HERO — recedes into background (negative Z, shrinks) as user scrolls;
+         shifts slightly left; fades out. Fully gone when hero section is scrolled past. */
       const heroOp = clamp(1 - hp * 1.15, 0, 1);
       if (heroModel) {
         heroGroup.visible = heroOp > 0.01;
@@ -175,16 +181,15 @@ import * as THREE from './vendor/three.module.js';
           const parkX = isMobile ? 1.0 : 3.0;
           heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5, 0.05);
           heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3, 0.05);
-          /* Zoom toward camera: positive z (forward) + scale grows on scroll */
-          heroGroup.position.z = lerp(heroGroup.position.z, hp * 3.0, 0.06);
-          heroGroup.scale.setScalar(lerp(isMobile ? 0.9 : 1.0, isMobile ? 2.4 : 3.0, hp));
+          /* Recede away from camera: negative z (further back) + scale shrinks */
+          heroGroup.position.z = lerp(heroGroup.position.z, -hp * 4.0, 0.06);
+          heroGroup.scale.setScalar(lerp(isMobile ? 0.9 : 1.0, isMobile ? 0.35 : 0.35, hp));
           for (let i = 0; i < heroMats.length; i++) {
             heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
           }
         } else {
-          /* Bug fix: snap z and scale back to starting values while invisible.
-             Prevents the model from lingering at a large/close position during
-             further scrolling and ensures a correct entrance on scroll-back. */
+          /* Snap z and scale back to starting values while invisible so the model
+             reappears correctly on scroll-back. */
           heroGroup.position.z = lerp(heroGroup.position.z, 0, 0.15);
           heroGroup.scale.setScalar(lerp(heroGroup.scale.x, isMobile ? 0.9 : 1.0, 0.15));
         }
