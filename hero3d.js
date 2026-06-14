@@ -1,6 +1,6 @@
 /* ========================================================
    FOCENOFF — All 3D layers (Three.js)
-   → hero: recedes into background on scroll, fades out after hero section
+   → hero: enlarges and fades out as user scrolls through hero section
    → about: anchored to #modelAboutSpot viewport position, no fade, Y-spin + gentle X/Z rock
    → contact: fixed position, Y-spin only
    Camera is fixed at (0,0,7) — all pointer motion is on group transforms
@@ -144,9 +144,8 @@ import * as THREE from './vendor/three.module.js';
 
     /* RENDER LOOP */
     /* heroEl = hero section (#top, height 100dvh).
-       We use its offsetHeight as the scroll distance over which the
-       exit animation plays so the model is fully gone once the hero
-       section leaves the viewport. */
+       Scroll progress hp goes 0→1 over exactly the hero section height,
+       so the model is completely gone before the next section appears. */
     const heroEl      = document.getElementById('top');
     const aboutSpotEl = document.getElementById('modelAboutSpot');
     let ppx = 0, ppy = 0;
@@ -159,7 +158,7 @@ import * as THREE from './vendor/three.module.js';
       const vh = window.innerHeight;
 
       const scrollY    = window.scrollY || (document.documentElement.scrollTop || 0);
-      /* Trigger exit over the hero section height, not the full page. */
+      /* hp = 0 at top, hp = 1 when hero section fully scrolled past. */
       const heroHeight = heroEl ? heroEl.offsetHeight : vh;
       const hp = clamp(scrollY / Math.max(1, heroHeight), 0, 1);
 
@@ -167,9 +166,10 @@ import * as THREE from './vendor/three.module.js';
       ppx += (pointer.x - ppx) * 0.065;
       ppy += (pointer.y - ppy) * 0.065;
 
-      /* HERO — recedes into background (negative Z, shrinks) as user scrolls;
-         shifts slightly left; fades out. Fully gone when hero section is scrolled past. */
-      const heroOp = clamp(1 - hp * 1.15, 0, 1);
+      /* HERO — enlarges (scale grows, Z moves toward camera) and fades as user
+         scrolls through the hero section. Multiplier 1.5 means opacity = 0 at
+         hp = 0.67, well before the works section starts. */
+      const heroOp = clamp(1 - hp * 1.5, 0, 1);
       if (heroModel) {
         heroGroup.visible = heroOp > 0.01;
         if (heroGroup.visible) {
@@ -179,26 +179,25 @@ import * as THREE from './vendor/three.module.js';
           heroGroup.rotation.x = lerp(heroGroup.rotation.x, -ppy * 0.25, 0.05);
           heroGroup.rotation.z = lerp(heroGroup.rotation.z, ppx * 0.08, 0.05);
           const parkX = isMobile ? 1.0 : 3.0;
-          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5, 0.05);
-          heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3, 0.05);
-          /* Recede away from camera: negative z (further back) + scale shrinks */
-          heroGroup.position.z = lerp(heroGroup.position.z, -hp * 4.0, 0.06);
-          heroGroup.scale.setScalar(lerp(isMobile ? 0.9 : 1.0, isMobile ? 0.35 : 0.35, hp));
+          heroGroup.position.x = lerp(heroGroup.position.x, parkX + ppx * 0.5, 0.07);
+          heroGroup.position.y = lerp(heroGroup.position.y, (isMobile ? 0.3 : 0) - ppy * 0.3, 0.07);
+          /* Zoom toward camera (positive z) + scale grows: gives the impression
+             of the model enlarging as it fades out into the background. */
+          heroGroup.position.z = lerp(heroGroup.position.z, hp * 2.5, 0.10);
+          heroGroup.scale.setScalar(lerp(isMobile ? 0.9 : 1.0, isMobile ? 2.0 : 2.2, hp));
           for (let i = 0; i < heroMats.length; i++) {
             heroMats[i].opacity = heroMats[i].userData.baseOpacity * heroOp;
           }
         } else {
-          /* Snap z and scale back to starting values while invisible so the model
-             reappears correctly on scroll-back. */
-          heroGroup.position.z = lerp(heroGroup.position.z, 0, 0.15);
-          heroGroup.scale.setScalar(lerp(heroGroup.scale.x, isMobile ? 0.9 : 1.0, 0.15));
+          /* Snap back to rest state while invisible so reappearance on
+             scroll-back is clean and doesn't jump from an enlarged position. */
+          heroGroup.position.z = lerp(heroGroup.position.z, 0, 0.18);
+          heroGroup.scale.setScalar(lerp(heroGroup.scale.x, isMobile ? 0.9 : 1.0, 0.18));
         }
       }
 
       /* ABOUT — strictly locked to #modelAboutSpot centre; no fade in/out; Y-spin + X/Z rock.
-         Projects the section's screen-space centre into 3-D world coordinates.
-         position.y is set directly every frame — no lerp lag, no scroll drift.
-         Always updated even off-screen so it is never stuck at a stale position. */
+         position.y is set directly every frame — no lerp lag, no scroll drift. */
       let aboutInView = false;
       if (aboutSpotEl && aboutModel) {
         const r = aboutSpotEl.getBoundingClientRect();
