@@ -195,11 +195,10 @@ import * as THREE from './vendor/three.module.js';
         }
       }
 
-      /* ABOUT — anchored to #modelAboutSpot center; no fade in/out; Y-spin + X/Z rock
-         Projects the section's screen-space centre into 3-D world coordinates so the
-         model stays visually fixed inside its HTML section as the page scrolls.
-         Bug fix: always update position even off-screen; snap instantly when section
-         is far from viewport to prevent stuck-at-top/bottom after fast scrolling. */
+      /* ABOUT — strictly locked to #modelAboutSpot centre; no fade in/out; Y-spin + X/Z rock.
+         Projects the section's screen-space centre into 3-D world coordinates.
+         position.y is set directly every frame — no lerp lag, no scroll drift.
+         Always updated even off-screen so it is never stuck at a stale position. */
       let aboutInView = false;
       if (aboutSpotEl && aboutModel) {
         const r = aboutSpotEl.getBoundingClientRect();
@@ -213,12 +212,9 @@ import * as THREE from './vendor/three.module.js';
         const ndcY       = -(sectionCY * 2 - 1);
         const targetY    = ndcY * worldHalfH;
 
-        /* Snap when section is >50% viewport away; smooth lerp when near/in view */
-        const distFromVp = r.top > vh ? r.top - vh : r.bottom < 0 ? -r.bottom : 0;
-        const lerpFactor = distFromVp > vh * 0.5 ? 1.0 : 0.1;
-
+        /* Strict snap — no lerp, model stays exactly at section centre. */
         aboutGroup.position.x = 0;
-        aboutGroup.position.y = lerp(aboutGroup.position.y, targetY, lerpFactor);
+        aboutGroup.position.y = targetY;
 
         aboutGroup.visible = aboutInView;
         if (aboutInView) {
