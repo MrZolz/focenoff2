@@ -236,12 +236,19 @@ import * as THREE from './vendor/three.module.js';
       }
 
       const anyLive = (heroOp > 0.01 && heroModel) || aboutInView || contactInView;
-      if (anyLive && hidden) {
-        hidden = false;
-        canvas.classList.add('is-live');
+      if (anyLive) {
+        if (hidden) { hidden = false; canvas.classList.add('is-live'); }
+        if (!document.hidden) renderer.render(scene, camera);
+      } else if (!hidden) {
+        /* Nothing is on screen (e.g. hero fully scrolled past): wipe the
+           framebuffer and hide the canvas so the last faint frame of the hero
+           model can't linger as a ghost. Without this the render loop simply
+           stops and the previously drawn frame stays visible on the fixed,
+           full-screen canvas. */
+        hidden = true;
+        canvas.classList.remove('is-live');
+        renderer.clear();
       }
-
-      if (anyLive && !document.hidden) renderer.render(scene, camera);
       requestAnimationFrame(frame);
     }
 

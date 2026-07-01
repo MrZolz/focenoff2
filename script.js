@@ -285,7 +285,17 @@ function renderWorkedWith() {
       track.appendChild(item);
     });
   };
-  build(); build();
+  /* Full-width seamless strip: repeat the channel set enough times that a
+     single "half" comfortably exceeds the viewport width (so on wide desktop
+     screens the strip fills the full width with no empty gap), then mirror it
+     into a second identical half so the GSAP -50% loop is seamless. */
+  build(); // one set, used to measure how wide a single set is
+  const oneSetW = track.scrollWidth || 1;
+  const vw = window.innerWidth || 1280;
+  let perHalf = Math.max(1, Math.ceil(vw / oneSetW) + 1); // +1 safety margin
+  perHalf = Math.min(perHalf, 30);                        // sane upper bound
+  const totalSets = perHalf * 2;                          // even → two identical halves
+  for (let i = 1; i < totalSets; i++) build();
 }
 
 /* ============================================================
