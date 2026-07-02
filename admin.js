@@ -256,10 +256,9 @@ function tabSections() {
 }
 
 function motionSectionUI(s, si) {
-  const thumb = getPath(content, `sections.${si}.thumbnail`);
-  const preview = thumb ? `<img class="preview-thumb" src="${escAttr(thumb)}" alt="" onerror="this.style.display='none'"/>` : '';
   const clips = (s.clips || []).map((c, ci) => {
     const base = `sections.${si}.clips.${ci}`;
+    const pImg = c.poster ? `<img class="preview-thumb" src="${escAttr(c.poster)}" alt="" onerror="this.style.display='none'"/>` : '';
     return `<div class="subitem">
       <div class="subitem__head">
         <span class="subitem__num">Клип ${ci + 1}</span>
@@ -274,15 +273,14 @@ function motionSectionUI(s, si) {
         ${field('Ссылка на оригинал (YouTube)', `${base}.ytUrl`, { placeholder: 'https://www.youtube.com/watch?v=...' })}
         ${field('Просмотры', `${base}.views`, { placeholder: '*14* views', hint: '*текст* = акцент; пусто — счётчик скрыт' })}
       </div>
+      ${field('URL постера (необяз.)', `${base}.poster`, { hint: 'Пусто — превью-видео крутится как анимированная обложка' })}
+      ${uploadZone(`${base}.poster`, 'image/*', 'Или загрузите изображение постера')}
+      ${pImg}
     </div>`;
   }).join('');
   return `<div class="stack" style="margin-top:8px">
-    <div class="field__label" style="margin-bottom:-6px">Превью плеера</div>
-    ${field('URL превью', `sections.${si}.thumbnail`)}
-    ${uploadZone(`sections.${si}.thumbnail`, 'image/*', 'Или загрузите изображение превью')}
-    ${preview}
-    <div class="field__label" style="margin-top:8px">Motion-нарезки</div>
-    ${clips}
+    <div class="field__label">Motion-нарезки — у каждой свой отдельный плеер</div>
+    ${clips || '<p class="tab__desc">Пока нет нарезок.</p>'}
     <button class="add-btn add-btn--block" data-act="add" data-arr="sections.${si}.clips" data-kind="clip"><i class="fa-solid fa-plus"></i> Добавить нарезку</button>
   </div>`;
 }
@@ -425,7 +423,7 @@ panelContent.addEventListener('input', (e) => {
    ДЕЙСТВИЯ (add / del / up / down / addsection)
 ============================================================ */
 function newItem(kind) {
-  if (kind === 'clip')    return { file: '', title: '', label: 'Motion \u00b7 YouTube', ytUrl: '', views: '' };
+  if (kind === 'clip')    return { file: '', title: '', label: 'Motion \u00b7 YouTube', ytUrl: '', views: '', poster: '' };
   if (kind === 'video')   return { thumbnail: '', videoId: '', name: '', nameUrl: '', type: '', stat: '' };
   if (kind === 'channel') return { name: '', avatar: '', subs: '' };
   return '';

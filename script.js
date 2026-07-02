@@ -195,9 +195,9 @@ function renderWorks() {
   const container = document.getElementById('worksTrack');
   if (!container) return;
   const sections = (CONTENT && CONTENT.sections) || [];
-  const tplChapter = document.getElementById('tplChapterCard');
-  const tplMotion  = document.getElementById('tplMotion');
-  const tplCard    = document.getElementById('tplVideoCard');
+  const tplChapter    = document.getElementById('tplChapterCard');
+  const tplMotionCard = document.getElementById('tplMotionCard');
+  const tplCard       = document.getElementById('tplVideoCard');
   container.innerHTML = '';
   let globalIdx = 0;
   sections.forEach(section => {
@@ -211,15 +211,16 @@ function renderWorks() {
       container.appendChild(ch);
     }
     if (section.type === 'motion') {
-      if (!tplMotion || !clips.length) return;
-      globalIdx++;
-      const node = tplMotion.content.firstElementChild.cloneNode(true);
-      node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
-      const thumb = node.querySelector('.motion-player__thumb');
-      if (section.thumbnail) thumb.src = section.thumbnail;
-      else thumb.hidden = true;
-      container.appendChild(node);
-      initMotionPlayer(node, clips);
+      if (!tplMotionCard || !clips.length) return;
+      // Each motion clip gets its OWN player card (like the Long Videos grid),
+      // instead of a single carousel that cycled through every clip.
+      clips.forEach(clip => {
+        globalIdx++;
+        const node = tplMotionCard.content.firstElementChild.cloneNode(true);
+        node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
+        container.appendChild(node);
+        initMotionCard(node, clip);
+      });
     } else {
       clips.forEach(item => {
         if (!tplCard) return;
@@ -299,92 +300,58 @@ function renderWorkedWith() {
 }
 
 /* ============================================================
-   MOTION PLAYER
+   MOTION CARD — one self-contained player per clip
+   Shows a lightweight muted looping preview as an animated
+   thumbnail; clicking opens the full clip (with sound) in the
+   shared modal, mirroring the Long Videos UX.
 ============================================================ */
-function initMotionPlayer(root, clips) {
-  const video    = root.querySelector('.motion-player__video');
-  const thumb    = root.querySelector('.motion-player__thumb');
-  const playBtn  = root.querySelector('.motion-player__play');
-  const prevBtn  = root.querySelector('.motion-nav--prev');
-  const nextBtn  = root.querySelector('.motion-nav--next');
-  const curEl    = root.querySelector('.motion-counter__cur');
-  const totalEl  = root.querySelector('.motion-counter__total');
-  const muteBtn  = root.querySelector('.motion-mute');
-  const titleEl  = root.querySelector('.motion-title');
-  const typeEl   = root.querySelector('.motion-type');
-  const viewsEl  = root.querySelector('.motion-views');
-  const ytLink   = root.querySelector('.motion-yt-link');
-  let idx = 0;
-  let started = false;
-  totalEl.textContent = String(clips.length);
-  function setSrc(clip) {
-    const fullSrc = toSrc(clip.file);
-    delete video.dataset.fellBack;
-    video.dataset.fullSrc = fullSrc;
-    video.src = toPreviewSrc(clip.file);
-  }
-  video.addEventListener('error', () => {
-    if (video.dataset.fellBack) return;
-    video.dataset.fellBack = '1';
-    video.src = video.dataset.fullSrc;
-    if (started) video.play().catch(() => {});
+function initMotionCard(root, clip) {
+  const preview = root.querySelector('.motion-card__preview');
+  const poster  = root.querySelector('.motion-card__poster');
+  const playBtn = root.querySelector('.motion-card__play');
+  const titleEl = root.querySelector('.motion-title');
+  const typeEl  = root.querySelector('.motion-type');
+  const viewsEl = root.querySelector('.motion-views');
+  const ytLink  = root.querySelector('.motion-yt-link');
+
+  titleEl.textContent = clip.title || '';
+  typeEl.textContent  = clip.label || '';
+  viewsEl.innerHTML   = fmtAccent(clip.views || '');
+  viewsEl.hidden      = !clip.views;
+  if (clip.ytUrl) { ytLink.href = clip.ytUrl; ytLink.hidden = false; }
+  else ytLink.hidden = true;
+
+  const fullSrc = toSrc(clip.file);
+
+  // Optional static poster image; otherwise the muted looping preview is the thumbnail.
+  if (clip.poster) { poster.src = clip.poster; poster.hidden = false; }
+
+  // Lightweight animated preview, falling back to the full file if the preview is missing.
+  preview.muted = true;
+  preview.dataset.fullSrc = fullSrc;
+  preview.src = toPreviewSrc(clip.file);
+  preview.addEventListener('error', () => {
+    if (preview.dataset.fellBack) return;
+    preview.dataset.fellBack = '1';
+    preview.src = fullSrc;
+    preview.play().catch(() => {});
   });
-  function applyCaption(clip) {
-    titleEl.textContent = clip.title || '';
-    typeEl.textContent  = clip.label || '';
-    viewsEl.innerHTML   = fmtAccent(clip.views || '');
-    viewsEl.hidden      = !clip.views;
-    if (clip.ytUrl) { ytLink.href = clip.ytUrl; ytLink.hidden = false; }
-    else ytLink.hidden = true;
-  }
-  function load(i, autoplay) {
-    idx = (i + clips.length) % clips.length;
-    const clip = clips[idx];
-    curEl.textContent = String(idx + 1);
-    applyCaption(clip);
-    setSrc(clip);
-    if (autoplay) video.play().catch(() => {});
-  }
-  function start() {
-    if (started) {
-      video.paused ? video.play().catch(() => {}) : video.pause();
-      return;
-    }
-    started = true;
-    root.classList.add('is-playing');
-    thumb.hidden = true;
-    muteBtn.hidden = false;
-    video.play().catch(() => {});
-  }
-  playBtn.addEventListener('click', (e) => { e.stopPropagation(); start(); });
-  video.addEventListener('click', () => { if (started) video.paused ? video.play().catch(() => {}) : video.pause(); });
-  video.addEventListener('play',  () => root.classList.add('is-playing'));
-  video.addEventListener('pause', () => root.classList.remove('is-playing'));
-  video.addEventListener('ended', () => load(idx + 1, true));
-  prevBtn.addEventListener('click', (e) => { e.stopPropagation(); load(idx - 1, started); if (!started) start(); });
-  nextBtn.addEventListener('click', (e) => { e.stopPropagation(); load(idx + 1, started); if (!started) start(); });
-  const iconOff = muteBtn.querySelector('.mute-icon--off');
-  const iconOn  = muteBtn.querySelector('.mute-icon--on');
-  window.FOCENOFF_SOUND.subscribe((on) => {
-    video.muted = !on;
-    if (iconOff) iconOff.toggleAttribute('hidden', on);
-    if (iconOn)  iconOn.toggleAttribute('hidden', !on);
-    muteBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    muteBtn.setAttribute('aria-label', on ? 'Выключить звук' : 'Включить звук');
-  });
-  muteBtn.addEventListener('click', (e) => { e.stopPropagation(); window.FOCENOFF_SOUND.toggle(); });
+
+  // Only autoplay the muted preview while the card is on screen.
   if (typeof IntersectionObserver !== 'undefined') {
-    let pausedByScroll = false;
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        if (!started) return;
-        if (!entry.isIntersecting && !video.paused) { video.pause(); pausedByScroll = true; }
-        else if (entry.isIntersecting && pausedByScroll) { video.play().catch(() => {}); pausedByScroll = false; }
+        if (entry.isIntersecting) preview.play().catch(() => {});
+        else preview.pause();
       });
     }, { threshold: 0.25 });
     io.observe(root);
+  } else {
+    preview.play().catch(() => {});
   }
-  load(0, false);
+
+  // The play button / media click opens this clip in the shared modal (see initVideoModal).
+  playBtn.setAttribute('data-video-src', fullSrc);
 }
 
 let lenis;
@@ -735,7 +702,7 @@ function initVideoModal() {
   let pausedByModal = [];
   function pauseBackground() {
     pausedByModal = [];
-    document.querySelectorAll('.motion-player__video').forEach(v => { if (!v.paused) { v.pause(); pausedByModal.push(v); } });
+    document.querySelectorAll('.motion-player__video, .motion-card__preview').forEach(v => { if (!v.paused) { v.pause(); pausedByModal.push(v); } });
     document.dispatchEvent(new CustomEvent('focenoff:modal-open'));
   }
   function resumeBackground() {
@@ -765,8 +732,28 @@ function initVideoModal() {
     if (typeof gsap !== 'undefined') gsap.to(box, { scale: 0.93, opacity: 0, duration: 0.28, ease: 'expo.in', onComplete: teardown });
     else teardown();
   }
+  function openLocal(src) {
+    if (!localVid) return;
+    iframe.hidden = true; iframe.src = '';
+    localVid.hidden = false;
+    localVid.src = src;
+    localVid.muted = false;
+    try { localVid.currentTime = 0; } catch { }
+    showModal();
+    const p = localVid.play(); if (p && p.catch) p.catch(() => {});
+  }
   window.openVideoModal = openModal;
+  window.openLocalVideoModal = openLocal;
   document.addEventListener('click', e => {
+    // Local motion clips (each its own player) — open the full clip in the modal.
+    const localBtn = e.target.closest('.work-item__play[data-video-src]');
+    if (localBtn) { e.preventDefault(); openLocal(localBtn.dataset.videoSrc); return; }
+    const localMedia = e.target.closest('.work-item--motion-card .work-item__media');
+    if (localMedia && !e.target.closest('a')) {
+      const pb = localMedia.querySelector('.work-item__play[data-video-src]');
+      if (pb) { e.preventDefault(); openLocal(pb.dataset.videoSrc); return; }
+    }
+    // YouTube (Long Videos)
     const btn = e.target.closest('.work-item__play[data-video-id]');
     if (btn) { e.preventDefault(); openModal(btn.dataset.videoId); return; }
     const media = e.target.closest('.work-item--yt .work-item__media');
