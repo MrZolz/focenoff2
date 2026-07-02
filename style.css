@@ -990,7 +990,8 @@ body::after {
   display: inline-flex;
   align-items: center;
   gap: clamp(36px, 5vw, 60px);
-  padding-inline: clamp(20px, 5vw, 72px);
+  padding-inline: 0;
+  padding-right: clamp(36px, 5vw, 60px); /* keeps loop seam gap even with first item */
   will-change: transform;
 }
 
@@ -1040,7 +1041,7 @@ body::after {
   overflow: hidden;
 }
 
-.contact-cta__inner { max-width: 1100px; }
+.contact-cta__inner { max-width: 1100px; margin: 0 auto; text-align: center; }
 
 .contact-cta__label {
   font-size: 0.62rem;
@@ -1079,6 +1080,7 @@ body::after {
 .contact-cta__socials {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px 48px;
 }
 
