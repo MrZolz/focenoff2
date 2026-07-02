@@ -18,7 +18,6 @@
   <div class="preloader" id="preloader" aria-hidden="true">
     <div class="preloader__center">
       <img src="ava.png" alt="" class="preloader__avatar" />
-      <div class="preloader__name">FOCENOFF</div>
     </div>
     <div class="preloader__foot">
       <div class="preloader__track">
@@ -194,29 +193,14 @@
     </div>
   </template>
 
-  <template id="tplMotion">
-    <article class="work-item work-item--motion" data-work>
-      <div class="work-item__media motion-player">
-        <img class="work-item__thumb motion-player__thumb" alt="Превью motion нарезки" loading="lazy" />
-        <video class="motion-player__video" playsinline preload="metadata"></video>
-        <button class="work-item__play motion-player__play" aria-label="Воспроизвести motion нарезку">
+  <template id="tplMotionCard">
+    <article class="work-item work-item--motion-card" data-work>
+      <div class="work-item__media motion-card">
+        <img class="work-item__thumb motion-card__poster" alt="Превью motion нарезки" loading="lazy" hidden />
+        <video class="motion-card__preview" muted loop playsinline preload="metadata"></video>
+        <button class="work-item__play motion-card__play" aria-label="Смотреть motion нарезку">
           <span class="work-item__play-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
           <span class="work-item__play-label">PLAY</span>
-        </button>
-        <button class="motion-nav motion-nav--prev" aria-label="Предыдущая нарезка">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <button class="motion-nav motion-nav--next" aria-label="Следующая нарезка">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <div class="motion-counter" aria-live="polite">
-          <span class="motion-counter__cur">1</span>
-          <span class="motion-counter__sep">/</span>
-          <span class="motion-counter__total"></span>
-        </div>
-        <button class="motion-mute" aria-label="Включить звук" aria-pressed="false" hidden>
-          <svg class="mute-icon mute-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-          <svg class="mute-icon mute-icon--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" hidden><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
         </button>
       </div>
       <div class="work-item__caption">
