@@ -144,7 +144,7 @@ function $$(sel) { return [...document.querySelectorAll(sel)]; }
 function renderTab() {
   const map = {
     hero: tabHero, marquee: tabMarquee, menu: tabMenu, sections: tabSections,
-    contact: tabContact, about: tabAbout, footer: tabFooter, links: tabLinks,
+    contact: tabContact, footer: tabFooter, links: tabLinks,
     models: tabModels, workedWith: tabWorkedWith,
   };
   panelContent.innerHTML = (map[activeTab] || tabHero)();
@@ -161,6 +161,14 @@ function field(label, path, opts = {}) {
   const ph = opts.placeholder ? `placeholder="${escAttr(opts.placeholder)}"` : '';
   return `<label class="field"><span class="field__label">${esc(label)}</span>
     <input class="field__input" data-bind="${path}" value="${escAttr(val)}" ${ph} />${hint}</label>`;
+}
+
+function selectField(label, path, options, hint) {
+  const val = String(getPath(content, path) ?? options[0].value);
+  const opts = options.map(o => `<option value="${escAttr(o.value)}" ${val === o.value ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
+  const h = hint ? `<span class="field__hint">${esc(hint)}</span>` : '';
+  return `<label class="field"><span class="field__label">${esc(label)}</span>
+    <select class="field__input" data-bind="${path}">${opts}</select>${h}</label>`;
 }
 
 function uploadZone(path, accept, label) {
@@ -248,6 +256,10 @@ function tabSections() {
         ${field('Номер раздела', `sections.${i}.num`)}
         ${field('Название раздела', `sections.${i}.title`)}
       </div>
+      ${selectField('Вид отображения раздела', `sections.${i}.layout`, [
+        { value: 'feed',     label: 'Лента — каждое видео отдельной карточкой (стрелки листают страницу)' },
+        { value: 'carousel', label: 'Карусель по автору — одно окно на автора, стрелки листают видео в превью' },
+      ], 'Карусель группирует работы по полю «Автор»: одно окно на автора, стрелки ‹ › листают его видео прямо в превью')}
       ${inner}
     </div>`;
   }).join('');
@@ -264,6 +276,7 @@ function motionSectionUI(s, si) {
         <span class="subitem__num">Клип ${ci + 1}</span>
         ${toolBtns(`sections.${si}.clips`, ci, s.clips.length)}
       </div>
+      ${field('Автор', `${base}.author`, { placeholder: 'напр. Scammers', hint: 'Нарезки с одинаковым автором связываются стрелками на сайте' })}
       ${uploadZone(`${base}.file`, 'video/mp4,video/webm', 'Перетащите .mp4 сюда или нажмите для выбора')}
       <div class="grid-2" style="margin-top:12px">
         ${field('Название', `${base}.title`)}
@@ -298,6 +311,7 @@ function videosSectionUI(s, si) {
         ${field('YouTube ID', `${base}.videoId`, { placeholder: 'напр. 2KrKQPX0m5A' })}
         ${field('Название', `${base}.name`)}
       </div>
+      ${field('Автор', `${base}.author`, { placeholder: 'напр. КЭШЗЛО', hint: 'Видео с одинаковым автором связываются стрелками на сайте' })}
       <div class="grid-2">
         ${field('Тип / подпись', `${base}.type`, { placeholder: 'My Channel' })}
         ${field('Статистика', `${base}.stat`, { hint: '*текст* = акцент, напр. *7K* views' })}
@@ -328,15 +342,6 @@ function tabContact() {
     </div></div>`;
 }
 
-/* ---------- ABOUT ---------- */
-function tabAbout() {
-  return tabHead('О себе', 'Текст-заявление (слева, светлый блок)') +
-    `<div class="card"><div class="stack">
-      ${field('Текст', 'texts.statementText', { area: true, rows: 4, hint: 'Оберните слово в *звёздочки*, чтобы выделить акцентом: *2M+*' })}
-      ${field('Подпись кнопки', 'texts.statementCta')}
-    </div></div>`;
-}
-
 /* ---------- FOOTER ---------- */
 function tabFooter() {
   return tabHead('Подвал', 'Тексты внизу страницы') +
@@ -351,7 +356,7 @@ function tabLinks() {
   return tabHead('Ссылки', 'Соц-сети и контакты (применяются по всему сайту)') +
     `<div class="card"><div class="stack">
       ${field('Telegram — написать (DM)', 'links.telegramDM')}
-      ${field('Telegram — канал', 'links.telegramChannel')}
+      ${field('Telegram �� канал', 'links.telegramChannel')}
       ${field('YouTube', 'links.youtube')}
       ${field('TikTok', 'links.tiktok')}
     </div></div>`;
@@ -367,8 +372,8 @@ function tabModels() {
       ${getPath(content, 'hero.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="hero.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>
     <div class="card"><div class="stack">
-      <div class="field__label">About — модель перед «О себе»</div>
-      <p class="field__hint" style="margin-top:-4px">По центру перед секцией. Появляется и плавно вращается при скролле к секции «О себе».</p>
+      <div class="field__label">3D-модель по центру ленты работ</div>
+      <p class="field__hint" style="margin-top:-4px">По центру между работами и блоком «Worked With». Появляется и плавно вращается при скролле.</p>
       ${uploadZone('about.modelFile', '.glb,.gltf,model/gltf-binary,model/gltf+json', 'Перетащите .glb сюда или нажмите для выбора')}
       ${getPath(content, 'about.modelFile') ? `<button class="add-btn" data-act="clearpath" data-path="about.modelFile"><i class="fa-solid fa-xmark"></i> Убрать модель</button>` : ''}
     </div></div>
@@ -405,7 +410,7 @@ function tabWorkedWith() {
       </div>
     </div>`;
   }).join('');
-  return tabHead('Worked With', 'Каналы в бегущей дорожке «Worked With:» после блока About') +
+  return tabHead('Worked With', 'Каналы в бегущей дорожке «Worked With:»') +
     cards +
     `<button class="add-btn add-btn--block" data-act="add" data-arr="workedWith" data-kind="channel"><i class="fa-solid fa-plus"></i> Добавить канал</button>`;
 }
@@ -423,8 +428,8 @@ panelContent.addEventListener('input', (e) => {
    ДЕЙСТВИЯ (add / del / up / down / addsection)
 ============================================================ */
 function newItem(kind) {
-  if (kind === 'clip')    return { file: '', title: '', label: 'Motion \u00b7 YouTube', ytUrl: '', views: '', poster: '' };
-  if (kind === 'video')   return { thumbnail: '', videoId: '', name: '', nameUrl: '', type: '', stat: '' };
+  if (kind === 'clip')    return { file: '', author: '', title: '', label: 'Motion \u00b7 YouTube', ytUrl: '', views: '', poster: '' };
+  if (kind === 'video')   return { thumbnail: '', videoId: '', author: '', name: '', nameUrl: '', type: '', stat: '' };
   if (kind === 'channel') return { name: '', avatar: '', subs: '' };
   return '';
 }
@@ -457,6 +462,7 @@ function handleAction(ds) {
       type: 'videos',
       num: String(content.sections.length + 1).padStart(2, '0'),
       title: 'НОВЫЙ РАЗДЕЛ',
+      layout: 'feed',
       items: [],
     });
     renderTab();

@@ -4,8 +4,6 @@
     "heroEyebrow": "VIDEO EDITOR",
     "heroTitleLine1": "MAXIM",
     "heroTitleLine2": "FOCENOFF",
-    "statementText": "ВИДЕОМОНТАЖЁР. РАБОТАЮ С КАНАЛАМИ ОТ *2M+* ПОДПИСЧИКОВ. YOUTUBE · REELS · BRAND CONTENT.",
-    "statementCta": "ИЛИ НАПИШИ В TELEGRAM",
     "contactLabel": "LET'S WORK TOGETHER!",
     "contactCtaLine1": "НАПИСАТЬ",
     "contactCtaLine2": "В TELEGRAM",
@@ -41,88 +39,44 @@
     "SHORTS VIDEO"
   ],
   "menu": [
-    { "text": "WORKS",   "href": "#works" },
-    { "text": "CONTACT", "href": "#contact" },
-    { "text": "ABOUT",   "href": "#statement" }
+    {
+      "text": "WORKS",
+      "href": "#works"
+    },
+    {
+      "text": "CONTACT",
+      "href": "#contact"
+    }
   ],
   "workedWith": [
     {
-      "name":   "Scammers",
+      "name": "Scammers",
       "avatar": "https://i.postimg.cc/1XtbHq0R/Scammers-Ava.jpg",
-      "subs":   "2M+"
+      "subs": "2M+"
     },
     {
-      "name":   "Харчевников",
+      "name": "Харчевников",
       "avatar": "https://i.postimg.cc/Qd2SfNgm/Snimok-ekrana-2026-03-03-v-19-27-23.png",
-      "subs":   "1.5M+"
+      "subs": "1.5M+"
     },
     {
-      "name":   "КЕШЗЛО",
+      "name": "КЕШЗЛО",
       "avatar": "https://yt3.googleusercontent.com/VrnR5j2rJIbjVAWBTAR1in3ZlqBb-M1deVz_j6qYzVKKPQ9twgu8IAN2BZu0cLwa0tUH2-hT9Q=s160-c-k-c0x00ffffff-no-rj",
-      "subs":   "500K+"
+      "subs": "500K+"
     }
   ],
   "sections": [
-    {
-      "id": "motion",
-      "type": "motion",
-      "num": "01",
-      "title": "MOTION",
-      "thumbnail": "https://focen.carrd.co/assets/videos/video02_thumbnail.jpg?v=032a4ee1",
-      "clips": [
-        {
-          "file": "scammers.mp4",
-          "title": "SCAMMERS",
-          "label": "Motion \u00b7 YouTube",
-          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
-          "views": "*14* views"
-        },
-        {
-          "file": "scammers (2).mp4",
-          "title": "SCAMMERS",
-          "label": "Motion \u00b7 YouTube",
-          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
-          "views": "*14* views"
-        },
-        {
-          "file": "scammers (3).mp4",
-          "title": "SCAMMERS",
-          "label": "Motion \u00b7 YouTube",
-          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
-          "views": "*14* views"
-        },
-        {
-          "file": "scammers (4).mp4",
-          "title": "SCAMMERS",
-          "label": "Motion \u00b7 YouTube",
-          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
-          "views": "*14* views"
-        },
-        {
-          "file": "scammers (5).mp4",
-          "title": "SCAMMERS",
-          "label": "Motion \u00b7 YouTube",
-          "ytUrl": "https://www.youtube.com/watch?v=_5AatlIb_is",
-          "views": "*14* views"
-        },
-        {
-          "file": "харчевников.mp4",
-          "title": "ХАРЧЕВНИКОВ",
-          "label": "Motion \u00b7 YouTube",
-          "ytUrl": "https://www.youtube.com/watch?v=n75_-ntNL2I",
-          "views": "*4* views"
-        }
-      ]
-    },
     {
       "id": "long-videos",
       "type": "videos",
       "num": "02",
       "title": "LONG VIDEOS",
+      "layout": "feed",
       "items": [
         {
           "thumbnail": "media/zhbMghFRk_Q_maxres.jpg",
           "videoId": "zhbMghFRk_Q",
+          "author": "КЭШЗЛО",
           "name": "КЭШЗЛО",
           "nameUrl": "https://youtu.be/zhbMghFRk_Q?si=j015K6GLllKIuqVI",
           "type": "УСТРОИЛСЯ РАБОТАТЬ В СКАМ ОФИС",
@@ -131,6 +85,7 @@
         {
           "thumbnail": "media/1xpPfVB1R64_maxres.jpg",
           "videoId": "1xpPfVB1R64",
+          "author": "КЭШЗЛО",
           "name": "КЭШЗЛО",
           "nameUrl": "https://www.youtube.com/watch?v=1xpPfVB1R64",
           "type": "30 ДНЕЙ ТОРЧАЛ НА САМЫХ ПОПУЛЯРНЫХ Н##КОТИКАХ",
@@ -139,10 +94,78 @@
         {
           "thumbnail": "media/video09_thumbnail.jpg",
           "videoId": "2KrKQPX0m5A",
+          "author": "FOCENOFF",
           "name": "FOCENOFF",
           "nameUrl": "https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ",
           "type": "Я – МОНТАЖЕР SCAMMERS (не кликбейт)",
           "stat": "*13K* views"
+        },
+        {
+          "thumbnail": "media/AgxlnwymNOo-HD-1.jpg",
+          "videoId": "AgxlnwymNOo",
+          "author": "FOCENOFF",
+          "name": "FOCENOFF",
+          "nameUrl": "https://www.youtube.com/watch?v=AgxlnwymNOo",
+          "type": "КАК НАЧАТЬ В МОНТАЖЕ В 2026? (без вложений)",
+          "stat": "*3,5K* views"
+        }
+      ]
+    },
+    {
+      "id": "motion",
+      "type": "motion",
+      "num": "01",
+      "title": "MOTION",
+      "layout": "carousel",
+      "thumbnail": "https://focen.carrd.co/assets/videos/video02_thumbnail.jpg?v=032a4ee1",
+      "clips": [
+        {
+          "file": "scammers.mp4",
+          "author": "Scammers",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://youtu.be/H4GSoYYDxq4?si=UMQqAaycXoxvvRmi",
+          "views": "*815K* views"
+        },
+        {
+          "file": "scammers (2).mp4",
+          "author": "Scammers",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://youtu.be/H4GSoYYDxq4?si=UMQqAaycXoxvvRmi",
+          "views": "*815K* views"
+        },
+        {
+          "file": "scammers (3).mp4",
+          "author": "Scammers",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://youtu.be/H4GSoYYDxq4?si=UMQqAaycXoxvvRmi",
+          "views": "*815K* views"
+        },
+        {
+          "file": "scammers (4).mp4",
+          "author": "Scammers",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://youtu.be/H4GSoYYDxq4?si=UMQqAaycXoxvvRmi",
+          "views": "*815K* views"
+        },
+        {
+          "file": "scammers (5).mp4",
+          "author": "Scammers",
+          "title": "SCAMMERS",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://youtu.be/H4GSoYYDxq4?si=UMQqAaycXoxvvRmi",
+          "views": "*815K* views"
+        },
+        {
+          "file": "харчевников.mp4",
+          "author": "Харчевников",
+          "title": "ХАРЧЕВНИКОВ",
+          "label": "Motion · YouTube",
+          "ytUrl": "https://www.youtube.com/watch?v=xte1EFyzPJk",
+          "views": "*296K* views"
         }
       ]
     }

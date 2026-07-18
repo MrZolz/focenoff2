@@ -1264,3 +1264,18 @@ body:not(.gsap-ready) [data-work-chapter] {
   .hero__stat { max-width: 55%; }
   .hero__cta-group { gap: 8px; }
 }
+
+/* ============================================================
+   AUTHOR GROUPS + SOUND TOGGLE (added)
+   - prev/next arrows link several works of one author
+   - sound button toggles a motion clip's preview audio
+============================================================ */
+.motion-nav:disabled { opacity: 0.32; cursor: default; pointer-events: none; }
+.motion-nav:disabled:hover { background: rgba(0,0,0,0.45); color: rgba(255,255,255,0.85); transform: translateY(-50%); }
+
+.motion-mute.is-on {
+  background: rgba(255,255,255,0.92);
+  color: #0c0b0a;
+  border-color: rgba(255,255,255,0.5);
+}
+.motion-mute.is-on:hover { background: #fff; color: #0c0b0a; transform: scale(1.1); }

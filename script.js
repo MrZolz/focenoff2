@@ -69,7 +69,7 @@ const EMBEDDED_DEFAULTS = {
   ],
   sections: [
     {
-      id: 'motion', type: 'motion', num: '02', title: 'MOTION',
+      id: 'motion', type: 'motion', num: '02', title: 'MOTION', layout: 'feed',
       clips: [
         { file: 'scammers.mp4',     title: 'SCAMMERS',    label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is', views: '*14* views' },
         { file: 'scammers (2).mp4', title: 'SCAMMERS',    label: 'Motion · YouTube', ytUrl: 'https://www.youtube.com/watch?v=_5AatlIb_is', views: '*14* views' },
@@ -80,7 +80,7 @@ const EMBEDDED_DEFAULTS = {
       ],
     },
     {
-      id: 'long-videos', type: 'videos', num: '03', title: 'LONG VIDEOS',
+      id: 'long-videos', type: 'videos', num: '03', title: 'LONG VIDEOS', layout: 'feed',
       items: [
         { thumbnail: 'media/zhbMghFRk_Q_maxres.jpg',  videoId: 'zhbMghFRk_Q', name: 'КЭШЗЛО',   type: 'УСТРОИЛСЯ РАБОТАТЬ В СКАМ ОФИС',                stat: '*357K* views' },
         { thumbnail: 'media/1xpPfVB1R64_maxres.jpg',  videoId: '1xpPfVB1R64', name: 'КЭШЗЛО',   type: '30 ДНЕЙ ТОРЧАЛ НА САМЫХ ПОПУЛЯРНЫХ Н##КОТИКАХ', stat: '*543K* views' },
@@ -200,8 +200,9 @@ function renderWorks() {
   const tplCard       = document.getElementById('tplVideoCard');
   container.innerHTML = '';
   let globalIdx = 0;
-  sections.forEach(section => {
-    const clips = section.type === 'motion' ? (section.clips || []) : (section.items || []);
+  sections.forEach((section, si) => {
+    const isMotion = section.type === 'motion';
+    const clips = isMotion ? (section.clips || []) : (section.items || []);
     const count = clips.length;
     if (tplChapter) {
       const ch = tplChapter.content.firstElementChild.cloneNode(true);
@@ -210,40 +211,153 @@ function renderWorks() {
       ch.querySelector('.works__chapter-count').textContent = count + ' PROJECT' + (count !== 1 ? 'S' : '');
       container.appendChild(ch);
     }
-    if (section.type === 'motion') {
+    // Group clips/items by author so several works of the same author are
+    // linked together with the prev/next arrows on the site.
+    const authorOf = (c) => String((c && c.author && String(c.author).trim()) || (isMotion ? (c.title || '') : (c.name || '')) || '').trim().toLowerCase();
+    const groupSize = {};
+    const groupPos  = {};
+    clips.forEach(c => { const k = authorOf(c); groupSize[k] = (groupSize[k] || 0) + 1; });
+
+    // Layout variant (per section, editable in the admin):
+    //   'feed'     — each work is its own card; arrows scroll the page between
+    //                the works of one author (default, original behaviour).
+    //   'carousel' — one window per author; arrows flip through that author's
+    //                videos right inside the preview (no page scroll).
+    const layout = section.layout === 'carousel' ? 'carousel' : 'feed';
+    // Author groups in first-appearance order (used by the carousel layout).
+    const groupOrder = [];
+    const groupMap = {};
+    clips.forEach(c => { const k = authorOf(c); if (!groupMap[k]) { groupMap[k] = []; groupOrder.push(k); } groupMap[k].push(c); });
+
+    if (isMotion) {
       if (!tplMotionCard || !clips.length) return;
-      // Each motion clip gets its OWN player card (like the Long Videos grid),
-      // instead of a single carousel that cycled through every clip.
-      clips.forEach(clip => {
-        globalIdx++;
-        const node = tplMotionCard.content.firstElementChild.cloneNode(true);
-        node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
-        container.appendChild(node);
-        initMotionCard(node, clip);
-      });
+      if (layout === 'carousel') {
+        // One window per author; the prev/next arrows flip through the clips.
+        groupOrder.forEach(key => {
+          globalIdx++;
+          const node = tplMotionCard.content.firstElementChild.cloneNode(true);
+          node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
+          node.classList.add('is-carousel');
+          node.dataset.group = si + '::' + key;
+          container.appendChild(node);
+          initMotionCarousel(node, groupMap[key]);
+        });
+      } else {
+        // Each motion clip gets its OWN player card (like the Long Videos grid).
+        clips.forEach(clip => {
+          globalIdx++;
+          const node = tplMotionCard.content.firstElementChild.cloneNode(true);
+          node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
+          const key  = authorOf(clip);
+          const size = groupSize[key] || 1;
+          const pos  = (groupPos[key] = (groupPos[key] == null ? 0 : groupPos[key] + 1));
+          node.dataset.group     = si + '::' + key;
+          node.dataset.groupPos  = pos;
+          node.dataset.groupSize = size;
+          container.appendChild(node);
+          initMotionCard(node, clip);
+          if (size > 1) addGroupControls(node, pos, size);
+        });
+      }
     } else {
-      clips.forEach(item => {
-        if (!tplCard) return;
-        globalIdx++;
-        const node    = tplCard.content.firstElementChild.cloneNode(true);
-        const img     = node.querySelector('.work-item__thumb');
-        img.src       = item.thumbnail || '';
-        img.alt       = item.name || '';
-        const playBtn = node.querySelector('.work-item__play');
-        if (item.videoId) {
-          playBtn.setAttribute('data-video-id', item.videoId);
-          playBtn.setAttribute('aria-label', 'Смотреть — ' + (item.name || ''));
-        }
-        node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
-        const nameLink = node.querySelector('.work-item__name a');
-        nameLink.textContent = item.name || '';
-        if (item.nameUrl) nameLink.href = item.nameUrl;
-        else nameLink.removeAttribute('href');
-        node.querySelector('.work-item__type').textContent = item.type || '';
-        node.querySelector('.work-item__stat').innerHTML   = fmtAccent(item.stat || '');
-        container.appendChild(node);
-      });
+      if (!tplCard) return;
+      if (layout === 'carousel') {
+        // One window per author; the prev/next arrows flip through the videos.
+        groupOrder.forEach(key => {
+          globalIdx++;
+          const node = tplCard.content.firstElementChild.cloneNode(true);
+          node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
+          node.classList.add('is-carousel');
+          node.dataset.group = si + '::' + key;
+          container.appendChild(node);
+          initVideoCarousel(node, groupMap[key]);
+        });
+      } else {
+        clips.forEach(item => {
+          globalIdx++;
+          const node    = tplCard.content.firstElementChild.cloneNode(true);
+          const img     = node.querySelector('.work-item__thumb');
+          img.src       = item.thumbnail || '';
+          img.alt       = item.name || '';
+          const playBtn = node.querySelector('.work-item__play');
+          if (item.videoId) {
+            playBtn.setAttribute('data-video-id', item.videoId);
+            playBtn.setAttribute('aria-label', 'Смотреть — ' + (item.name || ''));
+          }
+          node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
+          const nameLink = node.querySelector('.work-item__name a');
+          nameLink.textContent = item.name || '';
+          if (item.nameUrl) nameLink.href = item.nameUrl;
+          else nameLink.removeAttribute('href');
+          node.querySelector('.work-item__type').textContent = item.type || '';
+          node.querySelector('.work-item__stat').innerHTML   = fmtAccent(item.stat || '');
+          const key  = authorOf(item);
+          const size = groupSize[key] || 1;
+          const pos  = (groupPos[key] = (groupPos[key] == null ? 0 : groupPos[key] + 1));
+          node.dataset.group     = si + '::' + key;
+          node.dataset.groupPos  = pos;
+          node.dataset.groupSize = size;
+          container.appendChild(node);
+          if (size > 1) addGroupControls(node, pos, size);
+        });
+      }
     }
+  });
+}
+
+/* ============================================================
+   AUTHOR GROUPS — prev/next arrows that scroll between the works
+   of one author (e.g. several Scammers motion clips) and auto-play
+   the clip you land on ("the site moves down and the next clip plays").
+============================================================ */
+function addGroupControls(node, pos, size) {
+  const media = node.querySelector('.work-item__media');
+  if (!media) return;
+  const mkBtn = (dir, label, path) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'motion-nav motion-nav--' + dir;
+    b.setAttribute('aria-label', label);
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + path + '"/></svg>';
+    return b;
+  };
+  const prev = mkBtn('prev', 'Предыдущая работа автора', 'M15 18l-6-6 6-6');
+  const next = mkBtn('next', 'Следующая работа автора', 'M9 18l6-6-6-6');
+  if (pos <= 0)        prev.disabled = true;
+  if (pos >= size - 1) next.disabled = true;
+  const counter = document.createElement('span');
+  counter.className = 'motion-counter';
+  counter.textContent = (pos + 1) + ' / ' + size;
+  media.appendChild(prev);
+  media.appendChild(next);
+  media.appendChild(counter);
+}
+
+function initGroupNav() {
+  function scrollToWork(el) {
+    if (!el) return;
+    if (lenis) lenis.scrollTo(el, { offset: -90, duration: 1.2 });
+    else el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Play the muted preview of the clip we land on.
+    const preview = el.querySelector('.motion-card__preview');
+    if (preview) { const p = preview.play(); if (p && p.catch) p.catch(() => {}); }
+  }
+  document.addEventListener('click', (e) => {
+    const nav = e.target.closest('.motion-nav');
+    if (!nav) return;
+    if (nav.closest('.is-carousel')) return; // carousel arrows flip in place (handled per-card)
+    e.preventDefault();
+    e.stopPropagation();
+    if (nav.disabled) return;
+    const card = nav.closest('[data-group]');
+    if (!card) return;
+    const group = card.dataset.group;
+    const pos   = parseInt(card.dataset.groupPos, 10) || 0;
+    const dir   = nav.classList.contains('motion-nav--next') ? 1 : -1;
+    const members = Array.from(document.querySelectorAll('[data-group]'))
+      .filter(el => el.dataset.group === group)
+      .sort((a, b) => (parseInt(a.dataset.groupPos, 10) || 0) - (parseInt(b.dataset.groupPos, 10) || 0));
+    scrollToWork(members[pos + dir]);
   });
 }
 
@@ -352,6 +466,192 @@ function initMotionCard(root, clip) {
 
   // The play button / media click opens this clip in the shared modal (see initVideoModal).
   playBtn.setAttribute('data-video-src', fullSrc);
+
+  // Sound toggle right on the hover-preview (in addition to the modal player):
+  // hovering plays the clip muted; this button turns its sound on/off.
+  const media = root.querySelector('.work-item__media');
+  if (media) {
+    const muteBtn = document.createElement('button');
+    muteBtn.type = 'button';
+    muteBtn.className = 'motion-mute';
+    const ICON_MUTED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9 2 9 2 15 6 15 11 19Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+    const ICON_SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9 2 9 2 15 6 15 11 19Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 5.5a9 9 0 0 1 0 13"/></svg>';
+    const syncIcon = () => {
+      muteBtn.innerHTML = preview.muted ? ICON_MUTED : ICON_SOUND;
+      muteBtn.classList.toggle('is-on', !preview.muted);
+      muteBtn.setAttribute('aria-label', preview.muted ? 'Включить звук' : 'Выключить звук');
+      muteBtn.setAttribute('aria-pressed', String(!preview.muted));
+    };
+    syncIcon();
+    muteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (preview.muted) {
+        // Unmute this clip; mute every other preview so only one plays sound.
+        document.querySelectorAll('.motion-card__preview').forEach(v => { if (v !== preview) v.muted = true; });
+        preview.muted = false;
+        const p = preview.play(); if (p && p.catch) p.catch(() => {});
+        if (window.FOCENOFF_SOUND) window.FOCENOFF_SOUND.set(true);
+      } else {
+        preview.muted = true;
+      }
+      window.dispatchEvent(new CustomEvent('focenoff:sound-sync'));
+    });
+    window.addEventListener('focenoff:sound-sync', syncIcon);
+    document.addEventListener('focenoff:modal-close', syncIcon);
+    media.appendChild(muteBtn);
+  }
+}
+
+/* ============================================================
+   CAROUSEL LAYOUT — one window per author. The prev/next arrows
+   flip through that author's videos right inside the preview,
+   reusing the exact same button style & placement as the feed
+   layout (.motion-nav / .motion-counter), with no page scroll.
+============================================================ */
+function buildCarouselNav(media, labelPrev, labelNext) {
+  const mkBtn = (dir, label, path) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'motion-nav motion-nav--' + dir;
+    b.setAttribute('aria-label', label);
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + path + '"/></svg>';
+    return b;
+  };
+  const prev = mkBtn('prev', labelPrev, 'M15 18l-6-6 6-6');
+  const next = mkBtn('next', labelNext, 'M9 18l6-6-6-6');
+  const counter = document.createElement('span');
+  counter.className = 'motion-counter';
+  media.appendChild(prev);
+  media.appendChild(next);
+  media.appendChild(counter);
+  return { prev, next, counter };
+}
+
+function initMotionCarousel(root, clips) {
+  const preview = root.querySelector('.motion-card__preview');
+  const poster  = root.querySelector('.motion-card__poster');
+  const playBtn = root.querySelector('.motion-card__play');
+  const titleEl = root.querySelector('.motion-title');
+  const typeEl  = root.querySelector('.motion-type');
+  const viewsEl = root.querySelector('.motion-views');
+  const ytLink  = root.querySelector('.motion-yt-link');
+  const media   = root.querySelector('.work-item__media');
+  let cur = 0, soundOn = false, counter = null, muteBtn = null;
+
+  const ICON_MUTED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9 2 9 2 15 6 15 11 19Z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+  const ICON_SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9 2 9 2 15 6 15 11 19Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 5.5a9 9 0 0 1 0 13"/></svg>';
+  function syncIcon() {
+    if (!muteBtn) return;
+    muteBtn.innerHTML = preview.muted ? ICON_MUTED : ICON_SOUND;
+    muteBtn.classList.toggle('is-on', !preview.muted);
+    muteBtn.setAttribute('aria-label', preview.muted ? 'Включить звук' : 'Выключить звук');
+    muteBtn.setAttribute('aria-pressed', String(!preview.muted));
+  }
+
+  preview.muted = true;
+  preview.addEventListener('error', () => {
+    if (preview.dataset.fellBack) return;
+    preview.dataset.fellBack = '1';
+    preview.src = preview.dataset.fullSrc || '';
+    preview.play().catch(() => {});
+  });
+
+  function render(i) {
+    cur = (i + clips.length) % clips.length;
+    const clip = clips[cur];
+    titleEl.textContent = clip.title || '';
+    typeEl.textContent  = clip.label || '';
+    viewsEl.innerHTML   = fmtAccent(clip.views || '');
+    viewsEl.hidden      = !clip.views;
+    if (clip.ytUrl) { ytLink.href = clip.ytUrl; ytLink.hidden = false; } else ytLink.hidden = true;
+    const fullSrc = toSrc(clip.file);
+    playBtn.setAttribute('data-video-src', fullSrc);
+    if (clip.poster) { poster.src = clip.poster; poster.hidden = false; } else poster.hidden = true;
+    preview.dataset.fullSrc = fullSrc;
+    preview.dataset.fellBack = '';
+    preview.muted = !soundOn;
+    preview.src = toPreviewSrc(clip.file);
+    const p = preview.play(); if (p && p.catch) p.catch(() => {});
+    if (counter) counter.textContent = (cur + 1) + ' / ' + clips.length;
+    syncIcon();
+  }
+
+  if (typeof IntersectionObserver !== 'undefined') {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { if (entry.isIntersecting) preview.play().catch(() => {}); else preview.pause(); });
+    }, { threshold: 0.25 });
+    io.observe(root);
+  }
+
+  if (media && clips.length > 1) {
+    const nav = buildCarouselNav(media, 'Предыдущее видео этого автора', 'Следующее видео этого автора');
+    counter = nav.counter;
+    nav.prev.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); render(cur - 1); });
+    nav.next.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); render(cur + 1); });
+  }
+
+  if (media) {
+    muteBtn = document.createElement('button');
+    muteBtn.type = 'button';
+    muteBtn.className = 'motion-mute';
+    muteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (preview.muted) {
+        document.querySelectorAll('.motion-card__preview').forEach(v => { if (v !== preview) v.muted = true; });
+        soundOn = true; preview.muted = false;
+        const p = preview.play(); if (p && p.catch) p.catch(() => {});
+        if (window.FOCENOFF_SOUND) window.FOCENOFF_SOUND.set(true);
+      } else {
+        soundOn = false; preview.muted = true;
+      }
+      window.dispatchEvent(new CustomEvent('focenoff:sound-sync'));
+    });
+    window.addEventListener('focenoff:sound-sync', () => { soundOn = !preview.muted; syncIcon(); });
+    document.addEventListener('focenoff:modal-close', syncIcon);
+    media.appendChild(muteBtn);
+  }
+
+  render(0);
+}
+
+function initVideoCarousel(root, items) {
+  const img      = root.querySelector('.work-item__thumb');
+  const playBtn  = root.querySelector('.work-item__play');
+  const nameLink = root.querySelector('.work-item__name a');
+  const typeEl   = root.querySelector('.work-item__type');
+  const statEl   = root.querySelector('.work-item__stat');
+  const media    = root.querySelector('.work-item__media');
+  let cur = 0, counter = null;
+
+  function render(i) {
+    cur = (i + items.length) % items.length;
+    const it = items[cur];
+    img.src = it.thumbnail || '';
+    img.alt = it.name || '';
+    if (it.videoId) {
+      playBtn.setAttribute('data-video-id', it.videoId);
+      playBtn.setAttribute('aria-label', 'Смотреть — ' + (it.name || ''));
+    } else {
+      playBtn.removeAttribute('data-video-id');
+    }
+    nameLink.textContent = it.name || '';
+    if (it.nameUrl) nameLink.href = it.nameUrl;
+    else nameLink.removeAttribute('href');
+    typeEl.textContent = it.type || '';
+    statEl.innerHTML   = fmtAccent(it.stat || '');
+    if (counter) counter.textContent = (cur + 1) + ' / ' + items.length;
+  }
+
+  if (media && items.length > 1) {
+    const nav = buildCarouselNav(media, 'Предыдущее видео этого автора', 'Следующее видео этого автора');
+    counter = nav.counter;
+    nav.prev.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); render(cur - 1); });
+    nav.next.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); render(cur + 1); });
+  }
+
+  render(0);
 }
 
 let lenis;
@@ -745,6 +1045,8 @@ function initVideoModal() {
   window.openVideoModal = openModal;
   window.openLocalVideoModal = openLocal;
   document.addEventListener('click', e => {
+    // Ignore clicks on the per-clip nav arrows / sound toggle (handled elsewhere).
+    if (e.target.closest('.motion-nav') || e.target.closest('.motion-mute')) return;
     // Local motion clips (each its own player) — open the full clip in the modal.
     const localBtn = e.target.closest('.work-item__play[data-video-src]');
     if (localBtn) { e.preventDefault(); openLocal(localBtn.dataset.videoSrc); return; }
@@ -794,6 +1096,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initCursor();
   initVideoModal();
   initAnchorScroll();
+  initGroupNav();
   window.addEventListener('resize', fitAllDisplayText, { passive: true });
   const heroLine = document.querySelector('.hero__line');
   const heroFs = heroLine ? getComputedStyle(heroLine).fontSize : '100px';
