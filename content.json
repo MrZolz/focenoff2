@@ -27,7 +27,6 @@
   },
   "marquee": [
     "MOTION",
-    "2M+ SUBSCRIBERS",
     "YOUTUBE",
     "LONG VIDEO",
     "BIG CASES",
@@ -61,15 +60,20 @@
     },
     {
       "name": "КЕШЗЛО",
-      "avatar": "https://yt3.googleusercontent.com/VrnR5j2rJIbjVAWBTAR1in3ZlqBb-M1deVz_j6qYzVKKPQ9twgu8IAN2BZu0cLwa0tUH2-hT9Q=s160-c-k-c0x00ffffff-no-rj",
+      "avatar": "https://i.postimg.cc/DZmZX9xR/channels4-profile-(1).jpg",
       "subs": "500K+"
+    },
+    {
+      "name": "SECRET",
+      "avatar": "https://i.postimg.cc/T3GrBc2D/channels4-profile-(2).jpg",
+      "subs": "594K+"
     }
   ],
   "sections": [
     {
       "id": "long-videos",
       "type": "videos",
-      "num": "02",
+      "num": "",
       "title": "LONG VIDEOS",
       "layout": "feed",
       "items": [
@@ -114,7 +118,7 @@
     {
       "id": "motion",
       "type": "motion",
-      "num": "01",
+      "num": "",
       "title": "MOTION",
       "layout": "carousel",
       "thumbnail": "https://focen.carrd.co/assets/videos/video02_thumbnail.jpg?v=032a4ee1",
