@@ -236,7 +236,6 @@ function renderWorks() {
         groupOrder.forEach(key => {
           globalIdx++;
           const node = tplMotionCard.content.firstElementChild.cloneNode(true);
-          node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
           node.classList.add('is-carousel');
           node.dataset.group = si + '::' + key;
           container.appendChild(node);
@@ -247,7 +246,6 @@ function renderWorks() {
         clips.forEach(clip => {
           globalIdx++;
           const node = tplMotionCard.content.firstElementChild.cloneNode(true);
-          node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
           const key  = authorOf(clip);
           const size = groupSize[key] || 1;
           const pos  = (groupPos[key] = (groupPos[key] == null ? 0 : groupPos[key] + 1));
@@ -266,7 +264,6 @@ function renderWorks() {
         groupOrder.forEach(key => {
           globalIdx++;
           const node = tplCard.content.firstElementChild.cloneNode(true);
-          node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
           node.classList.add('is-carousel');
           node.dataset.group = si + '::' + key;
           container.appendChild(node);
@@ -284,7 +281,6 @@ function renderWorks() {
             playBtn.setAttribute('data-video-id', item.videoId);
             playBtn.setAttribute('aria-label', 'Смотреть — ' + (item.name || ''));
           }
-          node.querySelector('.work-item__index').textContent = String(globalIdx).padStart(2, '0');
           const nameLink = node.querySelector('.work-item__name a');
           nameLink.textContent = item.name || '';
           if (item.nameUrl) nameLink.href = item.nameUrl;
