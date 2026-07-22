@@ -146,8 +146,11 @@ function renderTab() {
     hero: tabHero, marquee: tabMarquee, menu: tabMenu, sections: tabSections,
     contact: tabContact, footer: tabFooter, links: tabLinks,
     models: tabModels, workedWith: tabWorkedWith,
+    theme: tabTheme, socials: tabSocials, preloader: tabPreloader,
+    custom: tabCustom, youtube: tabYoutube,
   };
   panelContent.innerHTML = (map[activeTab] || tabHero)();
+  if (activeTab === 'youtube') hydrateYoutube();
 }
 
 /* ---------- конструкторы полей ---------- */
@@ -169,6 +172,13 @@ function selectField(label, path, options, hint) {
   const h = hint ? `<span class="field__hint">${esc(hint)}</span>` : '';
   return `<label class="field"><span class="field__label">${esc(label)}</span>
     <select class="field__input" data-bind="${path}">${opts}</select>${h}</label>`;
+}
+
+function colorField(label, path, hint) {
+  const val = getPath(content, path) || '#000000';
+  const h = hint ? `<span class="field__hint">${esc(hint)}</span>` : '';
+  return `<label class="field"><span class="field__label">${esc(label)}</span>
+    <input type="color" class="field__input field__color" data-bind="${path}" value="${escAttr(val)}" style="height:42px;padding:4px;cursor:pointer" />${h}</label>`;
 }
 
 function uploadZone(path, accept, label) {
@@ -405,7 +415,9 @@ function tabWorkedWith() {
           ${field('Название канала', 'workedWith.' + i + '.name')}
           ${field('Подписчики', 'workedWith.' + i + '.subs', { placeholder: '2M+' })}
         </div>
+        ${field('Ссылка на канал', 'workedWith.' + i + '.url', { placeholder: 'https://youtube.com/@... или https://t.me/...', hint: 'При клике по аватарке откроется эта ссылка' })}
         ${field('URL аватарки', 'workedWith.' + i + '.avatar', { placeholder: 'https://...', hint: 'Прямая ссылка на фото канала (jpg/png/webp)' })}
+        ${uploadZone('workedWith.' + i + '.avatar', 'image/*', 'Или загрузите аватарку файлом')}
         ${avatarPreview}
       </div>
     </div>`;
@@ -413,6 +425,164 @@ function tabWorkedWith() {
   return tabHead('Worked With', 'Каналы в бегущей дорожке «Worked With:»') +
     cards +
     `<button class="add-btn add-btn--block" data-act="add" data-arr="workedWith" data-kind="channel"><i class="fa-solid fa-plus"></i> Добавить канал</button>`;
+}
+
+/* ---------- ТЕМА / ОФОРМЛЕНИЕ ---------- */
+function tabTheme() {
+  return tabHead('Тема / Оформление', 'Цвета, шрифт и размер текста — применяются по всему сайту') +
+    `<div class="card"><div class="stack">
+      ${colorField('Цвет фона сайта', 'theme.bg')}
+      ${colorField('Цвет текста', 'theme.text')}
+      ${colorField('Акцентный цвет', 'theme.accent', 'Выделения и статистика (напр. цифры просмотров)')}
+      ${selectField('Шрифт', 'theme.fontFamily', [
+        { value: "'Inter', sans-serif", label: 'Inter — как сейчас' },
+        { value: "'AKONY', sans-serif", label: 'AKONY — дисплейный' },
+        { value: "Georgia, 'Times New Roman', serif", label: 'Georgia — с засечками' },
+        { value: "'Courier New', monospace", label: 'Courier — моноширинный' },
+        { value: "'Arial', Helvetica, sans-serif", label: 'Arial' },
+      ])}
+      ${field('Размер текста, %', 'theme.fontScale', { placeholder: '100', hint: '100 — обычный. Напр. 120 — крупнее, 90 — мельче' })}
+    </div></div>`;
+}
+
+/* ---------- СОЦ-СЕТИ / КОНТАКТЫ ---------- */
+function tabSocials() {
+  const items = content.socials || [];
+  const cards = items.map((s, i) => `
+    <div class="card">
+      <div class="card__head">
+        <div class="card__title"><span class="tag">${String(i + 1).padStart(2, '0')}</span>${esc(s.label || 'Ссылка')}</div>
+        ${toolBtns('socials', i, items.length)}
+      </div>
+      <div class="grid-2">
+        ${field('Название', 'socials.' + i + '.label', { placeholder: 'YouTube' })}
+        ${field('Ссылка (URL)', 'socials.' + i + '.url', { placeholder: 'https://...' })}
+      </div>
+    </div>`).join('');
+  return tabHead('Соц-сети и контакты', 'Кликабельные названия-ссылки (в блоке контактов и в меню)') +
+    cards +
+    `<button class="add-btn add-btn--block" data-act="add" data-arr="socials" data-kind="social"><i class="fa-solid fa-plus"></i> Добавить ссылку</button>`;
+}
+
+/* ---------- АНИМАЦИЯ ЗАГРУЗКИ (ПРЕЛОАДЕР) ---------- */
+function tabPreloader() {
+  const cur = getPath(content, 'preloader.animFile');
+  return tabHead('Анимация загрузки', 'Файл, который проигрывается на экране загрузки вместо логотипа') +
+    `<div class="card"><div class="stack">
+      <p class="field__hint" style="margin-top:0">Поддерживаются: Lottie (.json), видео (.mp4 / .webm), изображения (.gif / .png / .webp).</p>
+      ${uploadZone('preloader.animFile', '.json,application/json,video/mp4,video/webm,image/*', 'Перетащите файл анимации сюда или нажмите для выбора')}
+      ${field('Или путь к файлу', 'preloader.animFile', { placeholder: 'media/intro.json' })}
+      ${cur ? `<button class="add-btn" data-act="clearpath" data-path="preloader.animFile"><i class="fa-solid fa-xmark"></i> Убрать анимацию</button>` : ''}
+    </div></div>`;
+}
+
+/* ===== Свои разделы (задача 2) ===== */
+function tabCustom() {
+  content.customSections = content.customSections || [];
+  const secs = content.customSections;
+  const posOpts = [
+    { value: 'after-hero', label: 'После Hero (первый экран)' },
+    { value: 'after-marquee', label: 'После бегущей строки' },
+    { value: 'after-works', label: 'После раздела с работами' },
+    { value: 'after-workedwith', label: 'После «Worked With»' },
+    { value: 'before-contact', label: 'Перед блоком контактов' },
+  ];
+  const alignOpts = [{ value: 'left', label: 'Слева' }, { value: 'center', label: 'По центру' }];
+  const widthOpts = [{ value: 'normal', label: 'Обычная' }, { value: 'full', label: 'Во всю ширину' }];
+  const cards = secs.map((s, i) => {
+    s.items = s.items || [];
+    const items = s.items.map((it, ii) => {
+      const base = `customSections.${i}.items.${ii}`;
+      if (it.type === 'image') {
+        const prev = it.src ? `<img class="preview-thumb" src="${escAttr(it.src)}" alt="" onerror="this.style.display='none'"/>` : '';
+        return `<div class="subitem">
+          <div class="subitem__head"><span class="subitem__num">🖼 Изображение ${ii + 1}</span>${toolBtns(`customSections.${i}.items`, ii, s.items.length)}</div>
+          ${uploadZone(`${base}.src`, 'image/*', 'Загрузите картинку файлом')}
+          ${field('Или URL / путь', `${base}.src`, { placeholder: 'https://… или media/…' })}
+          ${prev}
+          ${field('Подпись (необязательно)', `${base}.caption`)}
+          ${field('Ссылка при клике (необязательно)', `${base}.url`, { placeholder: 'https://…' })}
+          ${selectField('Ширина', `${base}.width`, widthOpts)}
+        </div>`;
+      }
+      return `<div class="subitem">
+        <div class="subitem__head"><span class="subitem__num">📝 Текст ${ii + 1}</span>${toolBtns(`customSections.${i}.items`, ii, s.items.length)}</div>
+        ${field('Заголовок (необязательно)', `${base}.heading`)}
+        ${field('Текст', `${base}.text`, { area: true, rows: 4 })}
+        ${field('Ссылка (необязательно)', `${base}.url`, { placeholder: 'https://…', hint: 'Если заполнено — весь блок станет кликабельной ссылкой' })}
+      </div>`;
+    }).join('');
+    return `<div class="card">
+      <div class="card__head">
+        <div class="card__title"><span class="tag">${String(i + 1).padStart(2, '0')}</span>${esc(s.title || 'Раздел')}</div>
+        ${toolBtns('customSections', i, secs.length)}
+      </div>
+      ${field('Заголовок раздела (необязательно)', `customSections.${i}.title`)}
+      ${selectField('Расположение на сайте', `customSections.${i}.position`, posOpts)}
+      ${selectField('Выравнивание', `customSections.${i}.align`, alignOpts)}
+      <div class="stack" style="margin-top:10px">
+        <div class="field__label">Блоки в разделе (текст и изображения вперемешку)</div>
+        ${items || '<p class="tab__desc">Пока нет блоков.</p>'}
+        <div class="grid-2">
+          <button class="add-btn" data-act="add" data-arr="customSections.${i}.items" data-kind="ctext"><i class="fa-solid fa-plus"></i> Текстовый блок</button>
+          <button class="add-btn" data-act="add" data-arr="customSections.${i}.items" data-kind="cimage"><i class="fa-solid fa-plus"></i> Блок с изображением</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  return tabHead('Свои разделы', 'Добавляйте собственные разделы с текстом и изображениями в любом месте страницы') +
+    (cards || '<p class="tab__desc">Пока нет своих разделов.</p>') +
+    `<button class="add-btn add-btn--block" data-act="add" data-arr="customSections" data-kind="customSection"><i class="fa-solid fa-plus"></i> Добавить раздел</button>`;
+}
+
+/* ===== YouTube — автопросмотры (задача 6) ===== */
+function tabYoutube() {
+  return tabHead('YouTube — автопросмотры', 'Автоматический счётчик просмотров под видео через YouTube Data API') +
+    `<div class="card"><div class="stack">
+      ${selectField('Автоматический счётчик просмотров', 'autoViews', [
+        { value: 'off', label: 'Выкл — показывать введённые вручную значения' },
+        { value: 'on', label: 'Вкл — брать актуальные просмотры из YouTube' },
+      ], 'При «Вкл» просмотры под каждым видео берутся из YouTube: по ID (YouTube-видео) или по ссылке (motion-нарезки). Значения кэшируются на 3 часа.')}
+      <label class="field">
+        <span class="field__label">YouTube Data API ключ</span>
+        <input class="field__input" id="ytApiKey" placeholder="Вставьте ключ, чтобы задать или заменить" autocomplete="off" />
+        <span class="field__hint" id="ytKeyStatus">Проверка…</span>
+        <span class="field__hint">Ключ хранится на сервере и не публикуется на сайте. Получить бесплатно: Google Cloud Console → создать проект → включить «YouTube Data API v3» → «Credentials» → создать API key.</span>
+      </label>
+      <button class="add-btn" data-act="saveytkey"><i class="fa-solid fa-key"></i> Сохранить API-ключ</button>
+    </div></div>`;
+}
+
+async function apiGetConfig() {
+  const res = await fetch('/api/config', { headers: { Authorization: 'Bearer ' + token } });
+  if (!res.ok) return {};
+  return res.json();
+}
+async function apiSaveConfig(patch) {
+  const res = await fetch('/api/config', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error('Ошибка сохранения ключа');
+  return res.json();
+}
+async function hydrateYoutube() {
+  const st = document.getElementById('ytKeyStatus');
+  try {
+    const c = await apiGetConfig();
+    if (st) st.textContent = c.hasYoutubeKey ? 'Ключ уже сохранён ✓ (введите новый, чтобы заменить)' : 'Ключ ещё не задан';
+  } catch (e) { if (st) st.textContent = ''; }
+}
+async function saveYtKey(val) {
+  try {
+    const c = await apiSaveConfig({ youtubeApiKey: val });
+    toast(val ? 'API-ключ сохранён' : 'API-ключ удалён', 'ok');
+    const st = document.getElementById('ytKeyStatus');
+    if (st) st.textContent = c.hasYoutubeKey ? 'Ключ уже сохранён ✓ (введите новый, чтобы заменить)' : 'Ключ ещё не задан';
+    const inp = document.getElementById('ytApiKey');
+    if (inp) inp.value = '';
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 /* ============================================================
@@ -430,7 +600,11 @@ panelContent.addEventListener('input', (e) => {
 function newItem(kind) {
   if (kind === 'clip')    return { file: '', author: '', title: '', label: 'Motion \u00b7 YouTube', ytUrl: '', views: '', poster: '' };
   if (kind === 'video')   return { thumbnail: '', videoId: '', author: '', name: '', nameUrl: '', type: '', stat: '' };
-  if (kind === 'channel') return { name: '', avatar: '', subs: '' };
+  if (kind === 'channel') return { name: '', avatar: '', subs: '', url: '' };
+  if (kind === 'social')  return { label: '', url: '' };
+  if (kind === 'customSection') return { title: '', position: 'after-works', align: 'left', items: [] };
+  if (kind === 'ctext')   return { type: 'text', heading: '', text: '', url: '' };
+  if (kind === 'cimage')  return { type: 'image', src: '', caption: '', url: '', width: 'normal' };
   return '';
 }
 
@@ -452,6 +626,11 @@ function handleAction(ds) {
   if (act === 'clearpath' && ds.path) {
     setPath(content, ds.path, '');
     renderTab();
+    return;
+  }
+  if (act === 'saveytkey') {
+    const inp = document.getElementById('ytApiKey');
+    saveYtKey(inp ? inp.value.trim() : '');
     return;
   }
 

@@ -17,7 +17,7 @@
   <!-- PRELOADER -->
   <div class="preloader" id="preloader" aria-hidden="true">
     <div class="preloader__center">
-      <img src="ava.png" alt="" class="preloader__avatar" />
+      <div id="preloaderLottie" class="preloader__anim" aria-hidden="true"></div>
     </div>
     <div class="preloader__foot">
       <div class="preloader__track">
@@ -58,12 +58,7 @@
       <nav class="menu-nav" aria-label="Главное меню">
         <ul id="menuList"></ul>
       </nav>
-      <div class="menu-socials">
-        <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" target="_blank" rel="noopener noreferrer">Telegram DM</a>
-        <a href="https://t.me/focenoff" data-link="telegramChannel" target="_blank" rel="noopener noreferrer">Channel</a>
-        <a href="https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ" data-link="youtube" target="_blank" rel="noopener noreferrer">YouTube</a>
-        <a href="https://www.tiktok.com/@focenoff" data-link="tiktok" target="_blank" rel="noopener noreferrer">TikTok</a>
-      </div>
+      <div class="menu-socials" data-socials></div>
     </div>
   </div>
 
@@ -71,7 +66,7 @@
   <section class="hero" id="top">
     <div class="hero__content">
       <div class="hero__eyebrow">
-        <span class="hero__eyebrow-tag">Motion Artist & Video Editor</span>
+        <span class="hero__eyebrow-tag" data-text="heroEyebrow">Motion Artist & Video Editor</span>
       </div>
       <h1 class="hero__title" id="heroTitle">
         <span class="hero__line" data-text="heroTitleLine1">MAXIM</span>
@@ -120,18 +115,15 @@
     <!-- CONTACT CTA -->
     <section class="contact-cta" id="contact">
       <div class="contact-cta__inner">
-        <p class="contact-cta__label">Готов к новым проектам</p>
+        <p class="contact-cta__label" data-text="contactLabel">Готов к новым проектам</p>
         <a href="https://t.me/MAKC_CBAPKA" data-link="telegramDM" class="contact-cta__link" target="_blank" rel="noopener noreferrer" aria-label="Написать в Telegram">
           <span data-text="contactCtaLine1">НАПИСАТЬ</span>
           <span data-text="contactCtaLine2">В TELEGRAM</span>
           <span class="contact-cta__arrow" aria-hidden="true">↗</span>
         </a>
-        <div class="contact-cta__socials">
-          <a href="https://t.me/focenoff" data-link="telegramChannel" target="_blank" rel="noopener noreferrer">TG Channel</a>
-          <a href="https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ" data-link="youtube" target="_blank" rel="noopener noreferrer">YouTube</a>
-          <a href="https://www.tiktok.com/@focenoff" data-link="tiktok" target="_blank" rel="noopener noreferrer">TikTok</a>
-        </div>
+        <div class="contact-cta__socials" data-socials></div>
       </div>
+      <span class="section__index" aria-hidden="true">03</span>
     </section>
 
     <!-- 3D MODEL — AFTER CONTACT -->
@@ -220,10 +212,11 @@
   </template>
 
   <!-- SCRIPTS -->
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
-  <script src="script.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" crossorigin="anonymous"></script>
+  <script defer src="vendor/lottie.min.js"></script>
+  <script defer src="script.js"></script>
   <script type="module" src="hero3d.js"></script>
 </body>
 </html>

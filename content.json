@@ -1,17 +1,35 @@
 {
+  "theme": {
+    "bg": "#f2f0ec",
+    "text": "#0c0b0a",
+    "accent": "#0c0b0a",
+    "fontFamily": "'Inter', sans-serif",
+    "fontScale": 100
+  },
+  "preloader": {
+    "animFile": "media/intro.json"
+  },
+  "autoViews": "off",
+  "customSections": [],
+  "socials": [
+    { "label": "Telegram DM", "url": "https://t.me/MAKC_CBAPKA" },
+    { "label": "TG Channel", "url": "https://t.me/focenoff" },
+    { "label": "YouTube", "url": "https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ" },
+    { "label": "TikTok", "url": "https://www.tiktok.com/@focenoff" }
+  ],
   "texts": {
     "headerLogo": "FOCENOFF",
-    "heroEyebrow": "VIDEO EDITOR",
+    "heroEyebrow": "Motion Artist & Video Editor",
     "heroTitleLine1": "MAXIM",
     "heroTitleLine2": "FOCENOFF",
-    "contactLabel": "LET'S WORK TOGETHER!",
+    "contactLabel": "Готов к новым проектам",
     "contactCtaLine1": "НАПИСАТЬ",
     "contactCtaLine2": "В TELEGRAM",
     "footerName": "MAXIM FOCENOFF",
     "footerContact": "CONTACT"
   },
   "hero": {
-    "modelFile": ""
+    "modelFile": "media/iPhone 17 Pro.glb"
   },
   "about": {
     "modelFile": "media/low_poly_stack_of_money.glb"
@@ -51,22 +69,26 @@
     {
       "name": "Scammers",
       "avatar": "https://i.postimg.cc/1XtbHq0R/Scammers-Ava.jpg",
-      "subs": "2M+"
+      "subs": "2M+",
+      "url": ""
     },
     {
       "name": "Харчевников",
       "avatar": "https://i.postimg.cc/Qd2SfNgm/Snimok-ekrana-2026-03-03-v-19-27-23.png",
-      "subs": "1.5M+"
+      "subs": "1.5M+",
+      "url": ""
     },
     {
       "name": "КЕШЗЛО",
       "avatar": "https://i.postimg.cc/DZmZX9xR/channels4-profile-(1).jpg",
-      "subs": "500K+"
+      "subs": "500K+",
+      "url": ""
     },
     {
       "name": "SECRET",
       "avatar": "https://i.postimg.cc/T3GrBc2D/channels4-profile-(2).jpg",
-      "subs": "594K+"
+      "subs": "594K+",
+      "url": ""
     }
   ],
   "sections": [

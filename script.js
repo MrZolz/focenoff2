@@ -122,12 +122,17 @@ async function loadContent() {
   CONTENT = await fetchContent();
   window.FOCENOFF_CONTENT = CONTENT;
   window.dispatchEvent(new CustomEvent('focenoff:content', { detail: CONTENT }));
+  applyTheme();
   applyTexts();
   applyLinks();
+  renderSocials();
   renderMarquee();
   renderMenu();
   renderWorks();
   renderWorkedWith();
+  renderCustomSections();
+  renderPreloaderAnim();
+  applyAutoViews();
 }
 
 function applyTexts() {
@@ -147,6 +152,165 @@ function applyLinks() {
   document.querySelectorAll('[data-link]').forEach(el => {
     const key = el.getAttribute('data-link');
     if (l[key]) el.setAttribute('href', l[key]);
+  });
+}
+
+function applyTheme() {
+  const th = (CONTENT && CONTENT.theme) || {};
+  const root = document.documentElement;
+  if (th.bg)   { root.style.setProperty('--bg', th.bg); root.style.setProperty('--paper', th.bg); }
+  if (th.text) { root.style.setProperty('--ink', th.text); root.style.setProperty('--white', th.text); }
+  if (th.accent) root.style.setProperty('--accent', th.accent);
+  if (th.fontFamily) root.style.setProperty('--f-sans', th.fontFamily);
+  if (th.fontScale != null && th.fontScale !== '') {
+    const s = Number(th.fontScale);
+    if (!isNaN(s) && s > 0) root.style.setProperty('--font-scale', String(s / 100));
+  }
+}
+
+function renderSocials() {
+  const socials = (CONTENT && CONTENT.socials) || [];
+  document.querySelectorAll('[data-socials]').forEach(box => {
+    box.innerHTML = '';
+    socials.forEach(s => {
+      if (!s || !s.label) return;
+      const a = document.createElement('a');
+      a.href = s.url || '#';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = s.label;
+      box.appendChild(a);
+    });
+  });
+}
+
+function renderPreloaderAnim() {
+  const box = document.getElementById('preloaderLottie');
+  if (!box) return;
+  const pf = (CONTENT && CONTENT.preloader && CONTENT.preloader.animFile) || 'media/intro.json';
+  if (!pf) { box.innerHTML = ''; return; }
+  if (box.dataset.src === pf) return; // already showing this file
+  box.dataset.src = pf;
+  box.innerHTML = '';
+  const ext = String(pf).split('.').pop().toLowerCase();
+  const url = String(pf).replace(/ /g, '%20');
+  try {
+    if (ext === 'json') {
+      if (typeof lottie !== 'undefined') lottie.loadAnimation({ container: box, renderer: 'svg', loop: true, autoplay: true, path: url });
+    } else if (['mp4', 'webm', 'mov', 'ogg'].includes(ext)) {
+      box.innerHTML = '<video autoplay muted loop playsinline src="' + url + '"></video>';
+    } else {
+      box.innerHTML = '<img src="' + url + '" alt="" />';
+    }
+  } catch (e) { /* ignore */ }
+}
+
+/* ============================================================
+   YouTube auto view counts (задача 6)
+============================================================ */
+const YT_VIEWS = {}; // id -> отформатированное число просмотров
+
+function extractYtId(url) {
+  if (!url) return '';
+  const s = String(url);
+  let m = s.match(/[?&]v=([A-Za-z0-9_-]{6,})/); if (m) return m[1];
+  m = s.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/); if (m) return m[1];
+  m = s.match(/\/embed\/([A-Za-z0-9_-]{6,})/); if (m) return m[1];
+  m = s.match(/\/shorts\/([A-Za-z0-9_-]{6,})/); if (m) return m[1];
+  return '';
+}
+
+function formatViews(n) {
+  n = Number(n);
+  if (isNaN(n)) return '';
+  if (n >= 1e9) return (n / 1e9).toFixed(n >= 1e10 ? 0 : 1).replace(/\.0$/, '') + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
+// Возвращает строку статистики: автоматический счётчик (если есть) или ручное значение.
+function ytStat(rawStat, videoId) {
+  const c = videoId && YT_VIEWS[videoId];
+  return c ? ('*' + c + '* views') : (rawStat || '');
+}
+
+async function applyAutoViews() {
+  if (!CONTENT || CONTENT.autoViews !== 'on') return;
+  const ids = new Set();
+  (CONTENT.sections || []).forEach(s => {
+    (s.items || []).forEach(it => { if (it.videoId) ids.add(it.videoId); });
+    (s.clips || []).forEach(c => { const id = extractYtId(c.ytUrl); if (id) ids.add(id); });
+  });
+  if (!ids.size) return;
+  try {
+    const res = await fetch('/api/youtube-views?ids=' + encodeURIComponent([...ids].join(',')));
+    if (!res.ok) return;
+    const data = await res.json();
+    let changed = false;
+    Object.keys(data.views || {}).forEach(id => {
+      const c = data.views[id];
+      if (c != null) { YT_VIEWS[id] = formatViews(c); changed = true; }
+    });
+    if (changed) renderWorks();
+  } catch (e) { /* сеть/API недоступны — остаются ручные значения */ }
+}
+
+/* ============================================================
+   Собственные разделы с текстом/изображениями (задача 2)
+============================================================ */
+function renderCustomSections() {
+  document.querySelectorAll('[data-custom-section]').forEach(el => el.remove());
+  const list = (CONTENT && CONTENT.customSections) || [];
+  if (!list.length) return;
+  const anchor = (pos) => {
+    switch (pos) {
+      case 'after-hero':       return { el: document.querySelector('.hero'),        where: 'after' };
+      case 'after-marquee':    return { el: document.querySelector('.marquee'),     where: 'after' };
+      case 'after-works':      return { el: document.querySelector('.works'),       where: 'after' };
+      case 'after-workedwith': return { el: document.querySelector('.worked-with'), where: 'after' };
+      case 'before-contact':   return { el: document.querySelector('.contact-cta'), where: 'before' };
+      default:                 return { el: document.querySelector('.works'),       where: 'after' };
+    }
+  };
+  list.forEach(sec => {
+    if (!sec) return;
+    const section = document.createElement('section');
+    section.className = 'custom-section' + (sec.align === 'center' ? ' custom-section--center' : '');
+    section.setAttribute('data-custom-section', '');
+    const inner = document.createElement('div');
+    inner.className = 'custom-section__inner';
+    if (sec.title) { const h = document.createElement('h2'); h.className = 'custom-section__title'; h.textContent = sec.title; inner.appendChild(h); }
+    (sec.items || []).forEach(it => {
+      if (!it) return;
+      if (it.type === 'image') {
+        if (!it.src) return;
+        const fig = document.createElement('figure');
+        fig.className = 'custom-block custom-block--image' + (it.width === 'full' ? ' is-full' : '');
+        const img = document.createElement('img');
+        img.src = String(it.src).replace(/ /g, '%20');
+        img.alt = it.caption || '';
+        img.loading = 'lazy';
+        let media = img;
+        if (it.url) { const a = document.createElement('a'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.appendChild(img); media = a; }
+        fig.appendChild(media);
+        if (it.caption) { const cap = document.createElement('figcaption'); cap.className = 'custom-block__caption'; cap.textContent = it.caption; fig.appendChild(cap); }
+        inner.appendChild(fig);
+      } else {
+        if (!it.heading && !it.text) return;
+        const hasUrl = !!it.url;
+        const wrap = document.createElement(hasUrl ? 'a' : 'div');
+        wrap.className = 'custom-block custom-block--text' + (hasUrl ? ' custom-block--link' : '');
+        if (hasUrl) { wrap.href = it.url; wrap.target = '_blank'; wrap.rel = 'noopener noreferrer'; }
+        if (it.heading) { const h = document.createElement('h3'); h.className = 'custom-block__heading'; h.textContent = it.heading; wrap.appendChild(h); }
+        if (it.text) { const p = document.createElement('p'); p.className = 'custom-block__text'; p.textContent = it.text; wrap.appendChild(p); }
+        inner.appendChild(wrap);
+      }
+    });
+    section.appendChild(inner);
+    const { el, where } = anchor(sec.position);
+    if (el) { if (where === 'before') el.before(section); else el.after(section); }
+    else document.body.appendChild(section);
   });
 }
 
@@ -286,7 +450,7 @@ function renderWorks() {
           if (item.nameUrl) nameLink.href = item.nameUrl;
           else nameLink.removeAttribute('href');
           node.querySelector('.work-item__type').textContent = item.type || '';
-          node.querySelector('.work-item__stat').innerHTML   = fmtAccent(item.stat || '');
+          node.querySelector('.work-item__stat').innerHTML   = fmtAccent(ytStat(item.stat, item.videoId));
           const key  = authorOf(item);
           const size = groupSize[key] || 1;
           const pos  = (groupPos[key] = (groupPos[key] == null ? 0 : groupPos[key] + 1));
@@ -373,8 +537,9 @@ function renderWorkedWith() {
   }
   const build = () => {
     channels.forEach(ch => {
-      const item = document.createElement('div');
+      const item = document.createElement(ch.url ? 'a' : 'div');
       item.className = 'worked-with__item';
+      if (ch.url) { item.href = ch.url; item.target = '_blank'; item.rel = 'noopener noreferrer'; }
       const img = document.createElement('img');
       img.className = 'worked-with__avatar';
       img.src     = ch.avatar || '';
@@ -426,8 +591,7 @@ function initMotionCard(root, clip) {
 
   titleEl.textContent = clip.title || '';
   typeEl.textContent  = clip.label || '';
-  viewsEl.innerHTML   = fmtAccent(clip.views || '');
-  viewsEl.hidden      = !clip.views;
+  { const _v = ytStat(clip.views, extractYtId(clip.ytUrl)); viewsEl.innerHTML = fmtAccent(_v); viewsEl.hidden = !_v; }
   if (clip.ytUrl) { ytLink.href = clip.ytUrl; ytLink.hidden = false; }
   else ytLink.hidden = true;
 
@@ -558,8 +722,7 @@ function initMotionCarousel(root, clips) {
     const clip = clips[cur];
     titleEl.textContent = clip.title || '';
     typeEl.textContent  = clip.label || '';
-    viewsEl.innerHTML   = fmtAccent(clip.views || '');
-    viewsEl.hidden      = !clip.views;
+    { const _v = ytStat(clip.views, extractYtId(clip.ytUrl)); viewsEl.innerHTML = fmtAccent(_v); viewsEl.hidden = !_v; }
     if (clip.ytUrl) { ytLink.href = clip.ytUrl; ytLink.hidden = false; } else ytLink.hidden = true;
     const fullSrc = toSrc(clip.file);
     playBtn.setAttribute('data-video-src', fullSrc);
@@ -636,7 +799,7 @@ function initVideoCarousel(root, items) {
     if (it.nameUrl) nameLink.href = it.nameUrl;
     else nameLink.removeAttribute('href');
     typeEl.textContent = it.type || '';
-    statEl.innerHTML   = fmtAccent(it.stat || '');
+    statEl.innerHTML   = fmtAccent(ytStat(it.stat, it.videoId));
     if (counter) counter.textContent = (cur + 1) + ' / ' + items.length;
   }
 
@@ -654,11 +817,15 @@ let lenis;
 
 function initLenis() {
   if (typeof Lenis === 'undefined') return;
+  // Mobile perf: use native touch scrolling (syncTouch off) so Lenis doesn't
+  // hijack every touch move — much smoother on phones. Lenis stays available
+  // for wheel + programmatic scrollTo on desktop.
+  const isTouch = matchMedia('(pointer: coarse)').matches || window.innerWidth < 768;
   lenis = new Lenis({
     lerp:            0.085,
     wheelMultiplier: 1.0,
     smoothWheel:     true,
-    syncTouch:       true,
+    syncTouch:       !isTouch,
     touchMultiplier: 1.2,
   });
   if (typeof gsap !== 'undefined') {
@@ -680,6 +847,8 @@ function initPreloader() {
   if (!preloader) { preloaderDone = true; return; }
   if (typeof gsap === 'undefined') { preloader.style.display = 'none'; preloaderDone = true; return; }
   document.body.classList.add('is-loading');
+  // Preloader animation is injected by renderPreloaderAnim() once content loads
+  // (so the admin-selected Lottie/video/image is used).
   const fill  = document.getElementById('preloaderFill');
   const numEl = document.getElementById('preloaderNum');
   const obj   = { val: 0 };

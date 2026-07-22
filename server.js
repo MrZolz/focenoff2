@@ -67,7 +67,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 250 * 1024 * 1024 }, // 250 МБ
   fileFilter: (req, file, cb) => {
-    const ok = /\.(mp4|webm|mov|jpg|jpeg|png|webp|gif|glb|gltf)$/i.test(file.originalname);
+    const ok = /\.(mp4|webm|mov|jpg|jpeg|png|webp|gif|glb|gltf|json)$/i.test(file.originalname);
     cb(ok ? null : new Error('Недопустимый тип файла'), ok);
   },
 });
@@ -139,6 +139,64 @@ app.get('/api/media', requireAuth, (req, res) => {
     if (err) return res.json({ files: [] });
     res.json({ files: files.map(f => 'media/' + f) });
   });
+});
+
+// --- Конфиг (API-ключи и пр.) ---
+function readConfig() { try { return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); } catch { return {}; } }
+function writeConfig(cfg) {
+  const tmp = CONFIG_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2), 'utf8');
+  fs.renameSync(tmp, CONFIG_FILE);
+}
+
+app.get('/api/config', requireAuth, (req, res) => {
+  const cfg = readConfig();
+  res.json({ hasYoutubeKey: !!cfg.youtubeApiKey });
+});
+
+app.put('/api/config', requireAuth, (req, res) => {
+  const cfg = readConfig();
+  const body = req.body || {};
+  if (typeof body.youtubeApiKey === 'string') {
+    if (body.youtubeApiKey.trim()) cfg.youtubeApiKey = body.youtubeApiKey.trim();
+    else delete cfg.youtubeApiKey;
+  }
+  try { writeConfig(cfg); res.json({ ok: true, hasYoutubeKey: !!cfg.youtubeApiKey }); }
+  catch { res.status(500).json({ error: 'Ошибка сохранения конфигурации' }); }
+});
+
+// --- Просмотры YouTube (кэш в памяти + прокси к YouTube Data API) ---
+const ytCache = new Map(); // id -> { views, ts }
+const YT_TTL  = 3 * 60 * 60 * 1000; // 3 часа
+app.get('/api/youtube-views', async (req, res) => {
+  const idsParam = String(req.query.ids || '').trim();
+  if (!idsParam) return res.json({ views: {} });
+  const ids = idsParam.split(',').map(s => s.trim()).filter(Boolean).slice(0, 50);
+  const cfg = readConfig();
+  const key = cfg.youtubeApiKey;
+  const now = Date.now();
+  const out = {};
+  const need = [];
+  ids.forEach(id => {
+    const c = ytCache.get(id);
+    if (c && (now - c.ts) < YT_TTL) out[id] = c.views;
+    else need.push(id);
+  });
+  if (need.length && key) {
+    try {
+      const url = 'https://www.googleapis.com/youtube/v3/videos?part=statistics&id=' +
+        encodeURIComponent(need.join(',')) + '&key=' + encodeURIComponent(key);
+      const r = await fetch(url);
+      if (r.ok) {
+        const data = await r.json();
+        (data.items || []).forEach(item => {
+          const v = item.statistics && item.statistics.viewCount != null ? Number(item.statistics.viewCount) : null;
+          if (v != null) { out[item.id] = v; ytCache.set(item.id, { views: v, ts: now }); }
+        });
+      }
+    } catch (e) { /* сеть/API недоступны — вернём кэш/пусто */ }
+  }
+  res.json({ views: out });
 });
 
 // --- Панель ---
