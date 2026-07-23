@@ -67,7 +67,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 250 * 1024 * 1024 }, // 250 МБ
   fileFilter: (req, file, cb) => {
-    const ok = /\.(mp4|webm|mov|jpg|jpeg|png|webp|gif|glb|gltf|json)$/i.test(file.originalname);
+    const ok = /\.(mp4|webm|mov|jpg|jpeg|png|webp|gif|glb|gltf|json|woff2|woff|ttf|otf)$/i.test(file.originalname);
     cb(ok ? null : new Error('Недопустимый тип файла'), ok);
   },
 });

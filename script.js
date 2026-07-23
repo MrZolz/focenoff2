@@ -133,6 +133,8 @@ async function loadContent() {
   renderCustomSections();
   renderPreloaderAnim();
   applyAutoViews();
+  applyCustomFonts();
+  applyTextStyles();
 }
 
 function applyTexts() {
@@ -147,11 +149,28 @@ function applyTexts() {
   });
 }
 
+/* Если в URL нет протокола (напр. «www.google.com»), браузер считает его
+   относительным путём (http://localhost:8899/www.google.com).
+   Добавляем https:// автоматически. */
+function normalizeUrl(u) {
+  const s = String(u || '').trim();
+  if (!s) return '';
+  if (/^(https?:|mailto:|tel:|#|\/)/i.test(s)) return s;
+  return 'https://' + s;
+}
+
 function applyLinks() {
   const l = (CONTENT && CONTENT.links) || {};
+  const socials = (CONTENT && CONTENT.socials) || [];
+  // Кнопки «написать в Telegram» берут ссылку из раздела «Соц-сети»:
+  // сначала ищем запись с пометкой DM, иначе — первую ссылку на Telegram.
+  const dm = socials.find(s => s && s.url && /(^|[^a-z])dm([^a-z]|$)/i.test(s.label || ''))
+    || socials.find(s => s && s.url && /t\.me|telegram/i.test((s.label || '') + ' ' + (s.url || '')));
   document.querySelectorAll('[data-link]').forEach(el => {
     const key = el.getAttribute('data-link');
-    if (l[key]) el.setAttribute('href', l[key]);
+    let url = l[key];
+    if (key === 'telegramDM' && dm) url = dm.url;
+    if (url) el.setAttribute('href', normalizeUrl(url));
   });
 }
 
@@ -168,6 +187,87 @@ function applyTheme() {
   }
 }
 
+/* ===== Свои шрифты (customFonts) =====
+   Загружаются в админке (раздел «Шрифты») и подключаются через @font-face. */
+function applyCustomFonts() {
+  const fonts = (CONTENT && CONTENT.customFonts) || [];
+  let css = '';
+  fonts.forEach((f) => {
+    if (!f || !f.name || !f.file) return;
+    const ext = String(f.file).split('.').pop().toLowerCase();
+    const fmt = { woff2: 'woff2', woff: 'woff', ttf: 'truetype', otf: 'opentype' }[ext];
+    css += "@font-face { font-family: '" + f.name + "'; src: url('" + f.file + "')" + (fmt ? " format('" + fmt + "')" : '') + "; font-display: swap; }\n";
+  });
+  let tag = document.getElementById('customFontsCss');
+  if (!tag) {
+    tag = document.createElement('style');
+    tag.id = 'customFontsCss';
+    document.head.appendChild(tag);
+  }
+  tag.textContent = css;
+}
+
+/* ===== Индивидуальное оформление текста блоков (textStyles) =====
+   Ключи редактируются в админке внутри каждого раздела.
+   Значение: { color: '#hex', font: 'CSS font-family', size: px } */
+const STYLE_TARGETS = {
+  headerLogo:      '.header__logo, .header__logo-text',
+  heroEyebrow:     '.hero__eyebrow-tag',
+  heroTitleLine1:  '[data-text="heroTitleLine1"]',
+  heroTitleLine2:  '[data-text="heroTitleLine2"]',
+  heroViewWork:    '.hero__view-work',
+  heroContact:     '.hero__contact-btn',
+  marquee:         '.marquee__item, .marquee__sep',
+  menuLinks:       '.menu-nav__link',
+  menuSocials:     '.menu-socials a',
+  sectionTitles:   '.works__chapter-title',
+  sectionNums:     '.works__chapter-num, .works__chapter-count',
+  workNames:       '.work-item__name',
+  workMeta:        '.work-item__type, .work-item__stat',
+  workedWithLabel: '.worked-with__label',
+  workedWithNames: '.worked-with__name',
+  workedWithSubs:  '.worked-with__subs',
+  contactLabel:    '[data-text="contactLabel"]',
+  contactCtaLine1: '[data-text="contactCtaLine1"]',
+  contactCtaLine2: '[data-text="contactCtaLine2"]',
+  contactSocials:  '.contact-cta__socials a',
+  footerName:      '.footer__name',
+  footerContact:   '.footer__contact',
+  footerCopy:      '.footer__copy',
+  customTitle:     '.custom-section__title',
+  customHeading:   '.custom-block__heading',
+  customText:      '.custom-block__text',
+  customCaption:   '.custom-block__caption',
+  preloader:       '.preloader__name, .preloader__num, .preloader__foot',
+};
+
+function applyTextStyles() {
+  const st = (CONTENT && CONTENT.textStyles) || {};
+  let css = '';
+  Object.keys(STYLE_TARGETS).forEach((key) => {
+    const s = st[key];
+    if (!s) return;
+    const sel = STYLE_TARGETS[key];
+    const inheritProps = [];
+    if (s.color) inheritProps.push('color: ' + s.color + ' !important');
+    if (s.font)  inheritProps.push('font-family: ' + s.font + ' !important');
+    if (inheritProps.length) {
+      // Красим и сам блок, и всё внутри него (буквы-обёртки, span и т.п.)
+      const deep = sel.split(',').map(p => p.trim() + ', ' + p.trim() + ' *').join(', ');
+      css += deep + ' { ' + inheritProps.join('; ') + '; }\n';
+    }
+    const size = Number(s.size);
+    if (size > 0) css += sel + ' { font-size: ' + size + 'px !important; }\n';
+  });
+  let tag = document.getElementById('textStylesCss');
+  if (!tag) {
+    tag = document.createElement('style');
+    tag.id = 'textStylesCss';
+    document.head.appendChild(tag);
+  }
+  tag.textContent = css;
+}
+
 function renderSocials() {
   const socials = (CONTENT && CONTENT.socials) || [];
   document.querySelectorAll('[data-socials]').forEach(box => {
@@ -175,7 +275,7 @@ function renderSocials() {
     socials.forEach(s => {
       if (!s || !s.label) return;
       const a = document.createElement('a');
-      a.href = s.url || '#';
+      a.href = normalizeUrl(s.url) || '#';
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       a.textContent = s.label;
@@ -273,11 +373,13 @@ function renderCustomSections() {
       default:                 return { el: document.querySelector('.works'),       where: 'after' };
     }
   };
-  list.forEach(sec => {
+  list.forEach((sec, secIdx) => {
     if (!sec) return;
     const section = document.createElement('section');
     section.className = 'custom-section' + (sec.align === 'center' ? ' custom-section--center' : '');
     section.setAttribute('data-custom-section', '');
+    // Якорь для пунктов меню вида #custom-section-N
+    section.id = 'custom-section-' + (secIdx + 1);
     const inner = document.createElement('div');
     inner.className = 'custom-section__inner';
     if (sec.title) { const h = document.createElement('h2'); h.className = 'custom-section__title'; h.textContent = sec.title; inner.appendChild(h); }
@@ -868,7 +970,7 @@ function initPreloader() {
     },
   });
   tl.to({}, { duration: 0.18 });
-  tl.to(preloader, { clipPath: 'inset(100% 0% 0% 0%)', duration: 0.9, ease: 'expo.inOut' });
+  tl.to(preloader, { opacity: 0, duration: 0.9, ease: 'power2.inOut' });
   return tl;
 }
 
@@ -974,8 +1076,8 @@ function initGSAP() {
   }
   const heroEyebrow = document.querySelector('.hero__eyebrow');
   if (heroEyebrow) gsap.fromTo(heroEyebrow, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 1, ease: 'expo.out', delay: preloaderDelay + 0.1 });
-  const heroBottom = document.querySelector('.hero__bottom');
-  if (heroBottom) gsap.fromTo(heroBottom, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 1, ease: 'expo.out', delay: preloaderDelay + 0.35 });
+  const heroCta = document.querySelector('.hero__cta-group');
+  if (heroCta) gsap.fromTo(heroCta, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 1, ease: 'expo.out', delay: preloaderDelay + 0.35 });
   const heroTitle = document.getElementById('heroTitle');
   if (heroTitle) {
     gsap.to(heroTitle, {

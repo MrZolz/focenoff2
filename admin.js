@@ -144,12 +144,13 @@ function $$(sel) { return [...document.querySelectorAll(sel)]; }
 function renderTab() {
   const map = {
     hero: tabHero, marquee: tabMarquee, menu: tabMenu, sections: tabSections,
-    contact: tabContact, footer: tabFooter, links: tabLinks,
+    contact: tabContact, footer: tabFooter,
     models: tabModels, workedWith: tabWorkedWith,
-    theme: tabTheme, socials: tabSocials, preloader: tabPreloader,
-    custom: tabCustom, youtube: tabYoutube,
+    socials: tabSocials, preloader: tabPreloader,
+    custom: tabCustom, youtube: tabYoutube, fonts: tabFonts,
   };
   panelContent.innerHTML = (map[activeTab] || tabHero)();
+  injectAdminFontFaces();
   if (activeTab === 'youtube') hydrateYoutube();
 }
 
@@ -213,7 +214,15 @@ function tabHero() {
         ${field('Имя — строка 1', 'texts.heroTitleLine1')}
         ${field('Имя — строка 2', 'texts.heroTitleLine2')}
       </div>
-    </div></div>`;
+    </div></div>` +
+    styleCard([
+      ['headerLogo', 'Логотип (шапка)'],
+      ['heroEyebrow', 'Над-заголовок (eyebrow)'],
+      ['heroTitleLine1', 'Имя — строка 1'],
+      ['heroTitleLine2', 'Имя — строка 2'],
+      ['heroViewWork', 'Кнопка «Посмотреть работы»'],
+      ['heroContact', 'Кнопка «contact me»'],
+    ]);
 }
 
 /* ---------- MARQUEE ---------- */
@@ -230,7 +239,8 @@ function tabMarquee() {
   return tabHead('Бегущая строка', 'Слова, которые бегут лентой под hero') +
     `<div class="card">${rows}
       <button class="add-btn add-btn--block" data-act="add" data-arr="marquee"><i class="fa-solid fa-plus"></i> Добавить слово</button>
-    </div>`;
+    </div>` +
+    styleCard([['marquee', 'Текст бегущей строки']]);
 }
 
 /* ---------- MENU ---------- */
@@ -249,7 +259,11 @@ function tabMenu() {
       </div>
     </div>`).join('');
   return tabHead('Меню', 'Пункты навигации в оверлее') + cards +
-    `<button class="add-btn add-btn--block" data-act="add" data-arr="menu"><i class="fa-solid fa-plus"></i> Добавить пункт</button>`;
+    `<button class="add-btn add-btn--block" data-act="add" data-arr="menu"><i class="fa-solid fa-plus"></i> Добавить пункт</button>` +
+    styleCard([
+      ['menuLinks', 'Пункты меню'],
+      ['menuSocials', 'Соц-ссылки в меню'],
+    ]);
 }
 
 /* ---------- SECTIONS ---------- */
@@ -274,7 +288,13 @@ function tabSections() {
     </div>`;
   }).join('');
   return tabHead('Разделы и видео', 'Motion-нарезки и YouTube-видео в каждом разделе') + blocks +
-    `<button class="add-btn add-btn--block" data-act="addsection"><i class="fa-solid fa-plus"></i> Добавить раздел с видео</button>`;
+    `<button class="add-btn add-btn--block" data-act="addsection"><i class="fa-solid fa-plus"></i> Добавить раздел с видео</button>` +
+    styleCard([
+      ['sectionTitles', 'Заголовки разделов'],
+      ['sectionNums', 'Номера и счётчики проектов'],
+      ['workNames', 'Названия работ'],
+      ['workMeta', 'Подписи и просмотры под работами'],
+    ]);
 }
 
 function motionSectionUI(s, si) {
@@ -348,8 +368,14 @@ function tabContact() {
         ${field('CTA — строка 1', 'texts.contactCtaLine1')}
         ${field('CTA — строка 2', 'texts.contactCtaLine2')}
       </div>
-      <p class="field__hint">Ссылка кнопки берётся из вкладки «Ссылки» → Telegram DM.</p>
-    </div></div>`;
+      <p class="field__hint">Ссылка кнопки берётся из раздела «Соц-сети»: используется запись с пометкой «DM» или первая ссылка на Telegram.</p>
+    </div></div>` +
+    styleCard([
+      ['contactLabel', 'Над-надпись'],
+      ['contactCtaLine1', 'CTA — строка 1'],
+      ['contactCtaLine2', 'CTA — строка 2'],
+      ['contactSocials', 'Ссылки соц-сетей в блоке'],
+    ]);
 }
 
 /* ---------- FOOTER ---------- */
@@ -358,20 +384,13 @@ function tabFooter() {
     `<div class="card"><div class="stack">
       ${field('Имя', 'texts.footerName')}
       ${field('Подпись ссылки контакта', 'texts.footerContact')}
-    </div></div>`;
+    </div></div>` +
+    styleCard([
+      ['footerName', 'Имя в подвале'],
+      ['footerContact', 'Ссылка контакта'],
+      ['footerCopy', 'Копирайт / подпись'],
+    ]);
 }
-
-/* ---------- LINKS ---------- */
-function tabLinks() {
-  return tabHead('Ссылки', 'Соц-сети и контакты (применяются по всему сайту)') +
-    `<div class="card"><div class="stack">
-      ${field('Telegram — написать (DM)', 'links.telegramDM')}
-      ${field('Telegram �� канал', 'links.telegramChannel')}
-      ${field('YouTube', 'links.youtube')}
-      ${field('TikTok', 'links.tiktok')}
-    </div></div>`;
-}
-
 /* ---------- 3D MODELS ---------- */
 function tabModels() {
   return tabHead('3D Модели', 'Загрузка .glb/.gltf моделей для разных секций сайта') +
@@ -424,25 +443,67 @@ function tabWorkedWith() {
   }).join('');
   return tabHead('Worked With', 'Каналы в бегущей дорожке «Worked With:»') +
     cards +
-    `<button class="add-btn add-btn--block" data-act="add" data-arr="workedWith" data-kind="channel"><i class="fa-solid fa-plus"></i> Добавить канал</button>`;
+    `<button class="add-btn add-btn--block" data-act="add" data-arr="workedWith" data-kind="channel"><i class="fa-solid fa-plus"></i> Добавить канал</button>` +
+    styleCard([
+      ['workedWithLabel', 'Надпись «Worked With:»'],
+      ['workedWithNames', 'Названия каналов'],
+      ['workedWithSubs', 'Подписчики'],
+    ]);
 }
 
-/* ---------- ТЕМА / ОФОРМЛЕНИЕ ---------- */
-function tabTheme() {
-  return tabHead('Тема / Оформление', 'Цвета, шрифт и размер текста — применяются по всему сайту') +
-    `<div class="card"><div class="stack">
-      ${colorField('Цвет фона сайта', 'theme.bg')}
-      ${colorField('Цвет текста', 'theme.text')}
-      ${colorField('Акцентный цвет', 'theme.accent', 'Выделения и статистика (напр. цифры просмотров)')}
-      ${selectField('Шрифт', 'theme.fontFamily', [
-        { value: "'Inter', sans-serif", label: 'Inter — как сейчас' },
-        { value: "'AKONY', sans-serif", label: 'AKONY — дисплейный' },
-        { value: "Georgia, 'Times New Roman', serif", label: 'Georgia — с засечками' },
-        { value: "'Courier New', monospace", label: 'Courier — моноширинный' },
-        { value: "'Arial', Helvetica, sans-serif", label: 'Arial' },
-      ])}
-      ${field('Размер текста, %', 'theme.fontScale', { placeholder: '100', hint: '100 — обычный. Напр. 120 — крупнее, 90 — мельче' })}
-    </div></div>`;
+/* ---------- ОФОРМЛЕНИЕ ТЕКСТА ПО БЛОКАМ ---------- */
+const FONT_OPTS = [
+  { value: '', label: 'Шрифт — по умолчанию' },
+  { value: "'Inter', sans-serif", label: 'Inter' },
+  { value: "'AKONY', sans-serif", label: 'AKONY — дисплейный' },
+  { value: "Georgia, 'Times New Roman', serif", label: 'Georgia — с засечками' },
+  { value: "'Courier New', monospace", label: 'Courier — моноширинный' },
+  { value: "'Arial', Helvetica, sans-serif", label: 'Arial' },
+];
+
+function fontOptions(defaultLabel) {
+  const opts = FONT_OPTS.map(o => ({ value: o.value, label: o.label }));
+  if (defaultLabel) opts[0] = { value: '', label: defaultLabel };
+  (content.customFonts || []).forEach((f) => {
+    if (f && f.name && f.file) opts.push({ value: `'${f.name}', sans-serif`, label: f.name + ' — свой шрифт' });
+  });
+  return opts;
+}
+
+function injectAdminFontFaces() {
+  const fonts = (content && content.customFonts) || [];
+  let css = '';
+  fonts.forEach((f) => {
+    if (!f || !f.name || !f.file) return;
+    const ext = String(f.file).split('.').pop().toLowerCase();
+    const fmt = { woff2: 'woff2', woff: 'woff', ttf: 'truetype', otf: 'opentype' }[ext];
+    css += "@font-face { font-family: '" + f.name + "'; src: url('" + f.file + "')" + (fmt ? " format('" + fmt + "')" : '') + "; font-display: swap; }\n";
+  });
+  let tag = document.getElementById('adminFontFaces');
+  if (!tag) { tag = document.createElement('style'); tag.id = 'adminFontFaces'; document.head.appendChild(tag); }
+  tag.textContent = css;
+}
+
+function styleRow(key, label) {
+  content.textStyles = content.textStyles || {};
+  const s = content.textStyles[key] || {};
+  const base = `textStyles.${key}`;
+  const opts = fontOptions().map(o => `<option value="${escAttr(o.value)}" ${(s.font || '') === o.value ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
+  return `<div class="stylerow" style="display:grid;grid-template-columns:minmax(130px,1.1fr) 46px minmax(130px,1fr) 78px 36px;gap:8px;align-items:center;padding:8px 10px;border:1px dashed rgba(0,0,0,0.14);border-radius:8px">
+    <span class="field__label" style="margin:0">${esc(label)}</span>
+    <input type="color" data-bind="${base}.color" value="${escAttr(s.color || '#000000')}" title="Цвет текста" style="height:32px;width:100%;padding:2px;cursor:pointer;border:1px solid rgba(0,0,0,0.15);border-radius:6px;background:none" />
+    <select class="field__input" data-bind="${base}.font" title="Шрифт" style="height:32px;padding:2px 6px">${opts}</select>
+    <input class="field__input" type="number" min="6" max="400" data-bind="${base}.size" value="${escAttr(s.size ?? '')}" placeholder="px" title="Размер текста, px" style="height:32px;padding:2px 8px" />
+    <button class="btn--icon" data-act="stylereset" data-stylekey="${key}" title="Сбросить оформление блока"><i class="fa-solid fa-rotate-left"></i></button>
+  </div>`;
+}
+
+function styleCard(rows) {
+  return `<div class="card"><div class="stack">
+    <div class="field__label"><i class="fa-solid fa-palette"></i> Оформление текста — индивидуально по блокам</div>
+    <p class="field__hint" style="margin-top:-4px">Цвет, шрифт и размер (px) каждого блока/кнопки этого раздела. Пустые значения — дизайн по умолчанию. Кнопка ↺ сбрасывает блок. Не забудьте нажать «Сохранить».</p>
+    ${rows.map(r => styleRow(r[0], r[1])).join('')}
+  </div></div>`;
 }
 
 /* ---------- СОЦ-СЕТИ / КОНТАКТЫ ---------- */
@@ -461,7 +522,35 @@ function tabSocials() {
     </div>`).join('');
   return tabHead('Соц-сети и контакты', 'Кликабельные названия-ссылки (в блоке контактов и в меню)') +
     cards +
-    `<button class="add-btn add-btn--block" data-act="add" data-arr="socials" data-kind="social"><i class="fa-solid fa-plus"></i> Добавить ссылку</button>`;
+    `<button class="add-btn add-btn--block" data-act="add" data-arr="socials" data-kind="social"><i class="fa-solid fa-plus"></i> Добавить ссылку</button>` +
+    styleCard([
+      ['contactSocials', 'Ссылки в блоке контактов'],
+      ['menuSocials', 'Ссылки в меню'],
+    ]);
+}
+
+/* ---------- ШРИФТЫ ---------- */
+function tabFonts() {
+  content.customFonts = content.customFonts || [];
+  const items = content.customFonts;
+  const cards = items.map((f, i) => `
+    <div class="card">
+      <div class="card__head">
+        <div class="card__title"><span class="tag">${String(i + 1).padStart(2, '0')}</span>${esc(f.name || 'Шрифт')}</div>
+        ${toolBtns('customFonts', i, items.length)}
+      </div>
+      <div class="stack">
+        ${field('Название шрифта', `customFonts.${i}.name`, { placeholder: 'напр. MyFont', hint: 'Под этим именем шрифт появится во всех списках «Шрифт»' })}
+        ${uploadZone(`customFonts.${i}.file`, '.woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf', 'Перетащите файл шрифта (.woff2 / .woff / .ttf / .otf) или нажмите для выбора')}
+        ${f.file && f.name ? `<div style="font-family:'${escAttr(f.name)}', sans-serif;font-size:1.5rem;padding:8px 2px">АаБбВв AaBbCc 0123 — предпросмотр</div>` : ''}
+      </div>
+    </div>`).join('');
+  return tabHead('Шрифты', 'Загружайте свои шрифты — они появятся в списках «Шрифт» во всех разделах') +
+    `<div class="card"><div class="stack">
+      ${selectField('Шрифт всего сайта (базовый)', 'theme.fontFamily', fontOptions('Стандартный (Inter)'), 'Применяется ко всему сайту. Индивидуальные настройки блоков имеют приоритет')}
+    </div></div>` +
+    (cards || '<p class="tab__desc">Пока нет своих шрифтов.</p>') +
+    `<button class="add-btn add-btn--block" data-act="add" data-arr="customFonts" data-kind="font"><i class="fa-solid fa-plus"></i> Добавить шрифт</button>`;
 }
 
 /* ---------- АНИМАЦИЯ ЗАГРУЗКИ (ПРЕЛОАДЕР) ---------- */
@@ -469,8 +558,8 @@ function tabPreloader() {
   const cur = getPath(content, 'preloader.animFile');
   return tabHead('Анимация загрузки', 'Файл, который проигрывается на экране загрузки вместо логотипа') +
     `<div class="card"><div class="stack">
-      <p class="field__hint" style="margin-top:0">Поддерживаются: Lottie (.json), видео (.mp4 / .webm), изображения (.gif / .png / .webp).</p>
-      ${uploadZone('preloader.animFile', '.json,application/json,video/mp4,video/webm,image/*', 'Перетащите файл анимации сюда или нажмите для выбора')}
+      <p class="field__hint" style="margin-top:0">Поддерживаются: Lottie (.json), видео (.mp4 / .webm / .mov), изображения (.gif / .png / .webp).</p>
+      ${uploadZone('preloader.animFile', '.json,application/json,video/mp4,video/webm,video/quicktime,.mov,image/*', 'Перетащите файл анимации сюда или нажмите для выбора')}
       ${field('Или путь к файлу', 'preloader.animFile', { placeholder: 'media/intro.json' })}
       ${cur ? `<button class="add-btn" data-act="clearpath" data-path="preloader.animFile"><i class="fa-solid fa-xmark"></i> Убрать анимацию</button>` : ''}
     </div></div>`;
@@ -532,7 +621,13 @@ function tabCustom() {
   }).join('');
   return tabHead('Свои разделы', 'Добавляйте собственные разделы с текстом и изображениями в любом месте страницы') +
     (cards || '<p class="tab__desc">Пока нет своих разделов.</p>') +
-    `<button class="add-btn add-btn--block" data-act="add" data-arr="customSections" data-kind="customSection"><i class="fa-solid fa-plus"></i> Добавить раздел</button>`;
+    `<button class="add-btn add-btn--block" data-act="add" data-arr="customSections" data-kind="customSection"><i class="fa-solid fa-plus"></i> Добавить раздел</button>` +
+    styleCard([
+      ['customTitle', 'Заголовки своих разделов'],
+      ['customHeading', 'Заголовки блоков'],
+      ['customText', 'Текст блоков'],
+      ['customCaption', 'Подписи изображений'],
+    ]);
 }
 
 /* ===== YouTube — автопросмотры (задача 6) ===== */
@@ -591,8 +686,24 @@ async function saveYtKey(val) {
 panelContent.addEventListener('input', (e) => {
   const el = e.target.closest('[data-bind]');
   if (!el) return;
-  setPath(content, el.getAttribute('data-bind'), el.value);
+  const path = el.getAttribute('data-bind');
+  setPath(content, path, el.value);
+  // Название своего раздела синхронизируется с его пунктом меню
+  const cm = path.match(/^customSections\.(\d+)\.title$/);
+  if (cm) {
+    const mi = (content.menu || []).find(x => x && x.href === '#custom-section-' + (Number(cm[1]) + 1));
+    if (mi) mi.text = el.value;
+  }
 });
+
+/* При перестановке своих разделов местами переносим подписи их пунктов меню,
+   чтобы якоря #custom-section-N продолжали указывать на правильные разделы */
+function swapCustomMenuTexts(a, b) {
+  const menu = content.menu || [];
+  const ma = menu.find(x => x && x.href === '#custom-section-' + (a + 1));
+  const mb = menu.find(x => x && x.href === '#custom-section-' + (b + 1));
+  if (ma && mb) { const t = ma.text; ma.text = mb.text; mb.text = t; }
+}
 
 /* ============================================================
    ДЕЙСТВИЯ (add / del / up / down / addsection)
@@ -604,6 +715,7 @@ function newItem(kind) {
   if (kind === 'social')  return { label: '', url: '' };
   if (kind === 'customSection') return { title: '', position: 'after-works', align: 'left', items: [] };
   if (kind === 'ctext')   return { type: 'text', heading: '', text: '', url: '' };
+  if (kind === 'font')    return { name: '', file: '' };
   if (kind === 'cimage')  return { type: 'image', src: '', caption: '', url: '', width: 'normal' };
   return '';
 }
@@ -625,6 +737,11 @@ function handleAction(ds) {
 
   if (act === 'clearpath' && ds.path) {
     setPath(content, ds.path, '');
+    renderTab();
+    return;
+  }
+  if (act === 'stylereset' && ds.stylekey) {
+    if (content.textStyles) delete content.textStyles[ds.stylekey];
     renderTab();
     return;
   }
@@ -654,13 +771,31 @@ function handleAction(ds) {
   if (act === 'add') {
     if (arr === 'marquee') list.push('');
     else if (arr === 'menu') list.push({ num: String(list.length + 1).padStart(2, '0'), text: 'НОВЫЙ', href: '#works' });
-    else list.push(newItem(kind));
+    else {
+      list.push(newItem(kind));
+      // Новый свой раздел автоматически попадает в меню со ссылкой-якорем
+      if (arr === 'customSections') {
+        content.menu = content.menu || [];
+        content.menu.push({ num: String(content.menu.length + 1).padStart(2, '0'), text: 'НОВЫЙ РАЗДЕЛ', href: '#custom-section-' + list.length });
+      }
+    }
   } else if (act === 'del') {
+    // При удалении своего раздела убираем его пункт из меню и сдвигаем якоря остальных
+    if (arr === 'customSections') {
+      const href = '#custom-section-' + (i + 1);
+      content.menu = (content.menu || []).filter(m => !(m && m.href === href));
+      content.menu.forEach(m => {
+        const mt = m && m.href && String(m.href).match(/^#custom-section-(\d+)$/);
+        if (mt && Number(mt[1]) > i + 1) m.href = '#custom-section-' + (Number(mt[1]) - 1);
+      });
+    }
     list.splice(i, 1);
   } else if (act === 'up' && i > 0) {
     [list[i - 1], list[i]] = [list[i], list[i - 1]];
+    if (arr === 'customSections') swapCustomMenuTexts(i, i - 1);
   } else if (act === 'down' && i < list.length - 1) {
     [list[i + 1], list[i]] = [list[i], list[i + 1]];
+    if (arr === 'customSections') swapCustomMenuTexts(i, i + 1);
   }
   renderTab();
 }

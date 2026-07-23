@@ -7,15 +7,66 @@
     "fontScale": 100
   },
   "preloader": {
-    "animFile": "media/intro.json"
+    "animFile": "media/focenoff-logo.webm"
   },
   "autoViews": "off",
   "customSections": [],
+  "textStyles": {
+    "heroEyebrow": {
+      "font": "'SF pro display', sans-serif",
+      "size": "35",
+      "spacing": "-2"
+    },
+    "heroViewWork": {
+      "size": "30"
+    },
+    "heroContact": {
+      "size": "30"
+    },
+    "heroTitleLine2": {
+      "color": "#170a54"
+    },
+    "workNames": {
+      "font": "'AKONY', sans-serif"
+    },
+    "sectionTitles": {
+      "color": "#170a54"
+    },
+    "workMeta": {
+      "font": "'SF pro display', sans-serif",
+      "spacing": "-0.2"
+    },
+    "contactCtaLine2": {
+      "color": "#170a54"
+    }
+  },
+  "customFonts": [
+    {
+      "name": "SF pro display",
+      "file": "media/SF-Pro-Display-Bold-1.otf"
+    }
+  ],
   "socials": [
-    { "label": "Telegram DM", "url": "https://t.me/MAKC_CBAPKA" },
-    { "label": "TG Channel", "url": "https://t.me/focenoff" },
-    { "label": "YouTube", "url": "https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ" },
-    { "label": "TikTok", "url": "https://www.tiktok.com/@focenoff" }
+    {
+      "label": "Telegram DM",
+      "url": "https://t.me/MAKC_CBAPKA"
+    },
+    {
+      "label": "TG Channel",
+      "url": "https://t.me/focenoff"
+    },
+    {
+      "label": "YouTube",
+      "url": "https://www.youtube.com/channel/UC_dVguEpMY8Vbiy0PKDjSwQ"
+    },
+    {
+      "label": "TikTok",
+      "url": "https://www.tiktok.com/@focenoff"
+    },
+    {
+      "label": "PORNHUB",
+      "url": "www.google.com"
+    }
   ],
   "texts": {
     "headerLogo": "FOCENOFF",
@@ -70,25 +121,25 @@
       "name": "Scammers",
       "avatar": "https://i.postimg.cc/1XtbHq0R/Scammers-Ava.jpg",
       "subs": "2M+",
-      "url": ""
+      "url": "https://www.youtube.com/@Scammers"
     },
     {
       "name": "Харчевников",
       "avatar": "https://i.postimg.cc/Qd2SfNgm/Snimok-ekrana-2026-03-03-v-19-27-23.png",
       "subs": "1.5M+",
-      "url": ""
+      "url": "https://www.youtube.com/@zCaxap"
     },
     {
       "name": "КЕШЗЛО",
       "avatar": "https://i.postimg.cc/DZmZX9xR/channels4-profile-(1).jpg",
       "subs": "500K+",
-      "url": ""
+      "url": "https://www.youtube.com/@cashzlo"
     },
     {
       "name": "SECRET",
       "avatar": "https://i.postimg.cc/T3GrBc2D/channels4-profile-(2).jpg",
       "subs": "594K+",
-      "url": ""
+      "url": "https://www.youtube.com/@SECRETi4_4"
     }
   ],
   "sections": [
