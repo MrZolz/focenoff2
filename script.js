@@ -1111,9 +1111,15 @@ function initCursor() {
   const dot = cursor.querySelector('.cursor__dot');
   const ring = cursor.querySelector('.cursor__ring');
   const label = cursor.querySelector('.cursor__label');
-  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+  // Страница отрисована с CSS-zoom (см. html { zoom }). Координаты мыши приходят
+  // в физических пикселях, а translate внутри .cursor дополнительно масштабируется
+  // этим zoom — поэтому делим на коэффициент, чтобы курсор точно совпадал с указателем.
+  const zoomOf = () => parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+  let zoom = zoomOf();
+  window.addEventListener('resize', () => { zoom = zoomOf(); }, { passive: true });
+  let mx = window.innerWidth / 2 / zoom, my = window.innerHeight / 2 / zoom;
   let rx = mx, ry = my, px = mx, py = my;
-  window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+  window.addEventListener('mousemove', e => { mx = e.clientX / zoom; my = e.clientY / zoom; });
   function animateCursor() {
     dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
     rx += (mx - rx) * 0.16; ry += (my - ry) * 0.16;
